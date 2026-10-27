@@ -1,0 +1,41 @@
+name: Make signing key (run once)
+
+# Creates the app's release signing key. Run this ONCE, download the result,
+# add the four values as repository secrets, then delete the workflow run.
+# Keep the .jks file and passwords safe: every future app update must be signed with the same key.
+
+on:
+  workflow_dispatch:
+    inputs:
+      password:
+        description: "Choose a strong password (at least 8 characters) for the key"
+        required: true
+      name:
+        description: "Name on the certificate"
+        required: false
+        default: "Entraiot Solutions"
+
+jobs:
+  key:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Create key
+        run: |
+          mkdir out
+          keytool -genkeypair -v -keystore out/uyir-release.jks -alias uyir \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass "${{ github.event.inputs.password }}" -keypass "${{ github.event.inputs.password }}" \
+            -dname "CN=${{ github.event.inputs.name }}, O=Entraiot Solutions, L=Chennai, ST=Tamil Nadu, C=IN"
+          base64 -w0 out/uyir-release.jks > out/KEYSTORE_BASE64.txt
+          echo "KEY_ALIAS = uyir" > out/README.txt
+          echo "KEYSTORE_PASSWORD and KEY_PASSWORD = the password you typed" >> out/README.txt
+          echo "KEYSTORE_BASE64 = contents of KEYSTORE_BASE64.txt" >> out/README.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: uyir-signing-key-DELETE-AFTER-DOWNLOAD
+          path: out/
+          retention-days: 1

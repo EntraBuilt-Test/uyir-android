@@ -1,0 +1,17 @@
+{
+  "name": "Uyir — Biology Teacher",
+  "short_name": "Uyir",
+  "description": "Ask Biology questions by voice in Tamil or English and hear answers from your Tamil Nadu State Board textbook (Std 3–12).",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f6ef",
+  "theme_color": "#2f6b3a",
+  "lang": "ta-IN",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

@@ -1,0 +1,885 @@
+<!doctype html>
+<html lang="ta">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Uyir: ask Biology questions by voice in Tamil or English and hear answers from your Tamil Nadu State Board textbook (Std 3–12).">
+<title>Uyir Biology Teacher</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#2f6b3a">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Hind+Madurai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: phone-style app. Top bar (app-language + theme), one screen at a time, bottom tabs Ask · Chapters · Quiz · History · Settings. Ask = the speaker. */
+:root{
+  --bg:#f3f6ef; --paper:#ffffff; --ink:#1d2a1f; --muted:#5b6b5c; --line:#d6dfd2;
+  --leaf:#2f6b3a; --leaf-ink:#ffffff; --pollen:#c98a12; --soft:#e6efe2;
+  --good:#2f7a3e; --bad:#b4442f; --warn:#9a6a00; --bar:#ffffff;
+  --display:"Young Serif", Georgia, serif;
+  --body:"Hind Madurai", "Noto Sans Tamil", system-ui, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121812; --paper:#1a221b; --ink:#e4ece2; --muted:#9fb09f; --line:#2c382d;
+  --leaf:#7cc28a; --leaf-ink:#0f1a11; --pollen:#e3b04a; --soft:#202b21;
+  --good:#7cc28a; --bad:#ec8a74; --warn:#e3b04a; --bar:#172018; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#121812; --paper:#1a221b; --ink:#e4ece2; --muted:#9fb09f; --line:#2c382d;
+  --leaf:#7cc28a; --leaf-ink:#0f1a11; --pollen:#e3b04a; --soft:#202b21;
+  --good:#7cc28a; --bad:#ec8a74; --warn:#e3b04a; --bar:#172018; color-scheme:dark }
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(84px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.app{max-width:520px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:12px}
+.brand{font-family:var(--display);font-size:1.25rem;line-height:1}
+.brand small{display:block;font-family:var(--mono);font-size:.64rem;letter-spacing:.08em;text-transform:uppercase;color:var(--pollen);margin-top:4px}
+.toggles{display:flex;gap:8px;align-items:center}
+.switch{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:3px;background:var(--paper)}
+.switch button{border:0;background:transparent;color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:.85rem;cursor:pointer;display:grid;place-items:center;min-height:32px}
+.switch button[aria-pressed="true"]{background:var(--leaf);color:var(--leaf-ink)}
+.switch svg{width:16px;height:16px}
+.screen{display:flex;flex-direction:column;gap:14px}
+.askscreen{align-items:center;text-align:center;padding-top:5vh}
+.speaker{width:148px;height:148px;border-radius:50%;border:0;background:var(--leaf);color:var(--leaf-ink);cursor:pointer;display:grid;place-items:center;position:relative;box-shadow:0 10px 30px -12px var(--leaf);flex:none}
+.speaker svg{width:62px;height:62px}
+.speaker.live{background:var(--bad);box-shadow:0 10px 30px -12px var(--bad)}
+.speaker.talk{background:var(--pollen)}
+.speaker.live::after,.speaker.talk::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:2px solid var(--line);animation:ring 1.3s ease-out infinite}
+.speaker.hearing::after{border-color:var(--bad);animation-duration:.6s}
+@keyframes ring{from{transform:scale(.92);opacity:.9}to{transform:scale(1.18);opacity:0}}
+@media (prefers-reduced-motion:reduce){.speaker::after{animation:none!important}}
+.state{font-family:var(--mono);font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-height:1.2em}
+.state.err{color:var(--bad);text-transform:none;letter-spacing:0;font-family:var(--body);font-size:.9rem}
+.caption{font-size:1.05rem;min-height:3em;max-width:32ch}
+.caption .interim{color:var(--muted)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px;text-align:left;width:100%}
+.card h2{font-family:var(--display);font-weight:400;font-size:1.15rem;margin:0}
+.ans{white-space:pre-wrap}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+input[type=text],select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+input[type=text]{flex:1;min-width:0}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:8px 14px;font:inherit;cursor:pointer}
+.btn.primary{background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.linkbtn{border:0;background:transparent;color:var(--leaf);font:inherit;font-size:.9rem;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:4px}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--pollen);outline-offset:2px}
+.tag{display:inline-block;font-family:var(--mono);font-size:.68rem;padding:2px 8px;border-radius:999px;border:1px solid currentColor}
+.tag.gen{color:var(--warn)} .tag.demo{color:var(--muted)} .tag.ok{color:var(--good)} .tag.no{color:var(--bad)}
+h1.title{font-family:var(--display);font-weight:400;font-size:1.5rem;margin:6px 0 0}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.item .t{font-weight:500}
+.item .s{font-size:.85rem;color:var(--muted)}
+.iconbtn{border:1px solid var(--line);background:var(--soft);color:var(--ink);border-radius:50%;width:40px;height:40px;display:grid;place-items:center;cursor:pointer;flex:none}
+.iconbtn svg{width:18px;height:18px}
+.set{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.set:last-child{border-bottom:0}
+.set .s{font-size:.85rem;color:var(--muted)}
+.voices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media (max-width:380px){.voices{grid-template-columns:1fr}}
+.voice{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--bg);cursor:pointer;text-align:left;font:inherit;color:var(--ink);min-width:0}
+.voice[aria-pressed="true"]{border-color:var(--leaf);box-shadow:inset 0 0 0 1px var(--leaf)}
+.voice .av{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-weight:600;flex:none;background:var(--soft)}
+.voice .nm{font-weight:500;line-height:1.2}
+.voice .ds{font-size:.78rem;color:var(--muted);line-height:1.25}
+.voice[aria-pressed="true"] .av{background:var(--leaf);color:var(--leaf-ink)}
+.vhead{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--pollen)}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.76rem;font-variant-numeric:tabular-nums}
+td,th{border-bottom:1px solid var(--line);padding:6px 4px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:500}
+.note{font-size:.85rem;color:var(--muted)}
+.qa{display:flex;flex-direction:column;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.qa .q{font-weight:600}
+.qa .a{white-space:pre-wrap;font-size:.95rem}
+.empty{color:var(--muted);text-align:center;padding:24px 8px;border:1px dashed var(--line);border-radius:12px}
+ .chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:.88rem;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--leaf);color:var(--leaf-ink);border-color:var(--leaf)}
+.chap{display:flex;align-items:center;gap:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;text-align:left;font:inherit;color:var(--ink);width:100%}
+.chap .num{font-family:var(--mono);font-size:.75rem;color:var(--pollen);min-width:2.2em}
+.chap .t{font-weight:500}
+.chap .s{font-size:.82rem;color:var(--muted)}
+.rdtitle{font-family:var(--display);font-weight:400;font-size:1.25rem;margin:0;text-wrap:balance}
+.page{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;white-space:pre-wrap;line-height:1.7;font-size:1rem;min-height:40vh}
+.rdbar{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:8px;position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--bg);padding-block:8px}
+.cite{font-size:.85rem;color:var(--muted)}
+nav.bottom{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--bar);border-top:1px solid var(--line);
+  padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px));padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.bottom .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+nav.bottom button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:.72rem;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 2px 12px;cursor:pointer}
+nav.bottom button svg{width:22px;height:22px}
+nav.bottom button[aria-current="page"]{color:var(--leaf);font-weight:600}
+</style>
+
+<style>html{-webkit-text-size-adjust:100%}body{margin:0}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div class="brand">Uyir<small>Biology · Std 3–12</small></div>
+    <div class="toggles">
+      <div class="switch" role="group" aria-label="App language">
+        <button id="ui-en" aria-pressed="true">EN</button>
+        <button id="ui-ta" aria-pressed="false">தமிழ்</button>
+      </div>
+      <div class="switch" role="group" aria-label="Theme">
+        <button id="th-light" aria-pressed="false" aria-label="Light mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+        <button id="th-dark" aria-pressed="false" aria-label="Dark mode"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ASK: the speaker -->
+  <section class="screen askscreen" id="v-ask">
+    <button class="speaker" id="speaker" aria-label="Tap and ask your question">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+    </button>
+    <div class="state" id="state">Tap to ask</div>
+    <div class="caption" id="caption" aria-live="polite"></div>
+    <div class="card" id="anscard" hidden aria-live="polite">
+      <div class="row between"><span id="srcTag"></span><button class="iconbtn" id="replay" aria-label="Read again"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button></div>
+      <div class="ans" id="answer"></div>
+      <div class="row between"><span class="cite" id="cite"></span><button class="linkbtn" id="openPage" hidden>Open this page</button></div>
+    </div>
+    <button class="linkbtn" id="typeToggle">Type instead</button>
+    <form class="row" id="askform" hidden style="width:100%">
+      <input type="text" id="q" placeholder="Type your question" autocomplete="off">
+      <button class="btn primary" type="submit" id="askbtn">Ask</button>
+    </form>
+  </section>
+
+  <!-- CHAPTERS -->
+  <section class="screen" id="v-chapters" hidden>
+    <div id="chHome" class="screen">
+      <h1 class="title" id="chTitle">Chapters</h1>
+      <div class="row"><select id="chStd" aria-label="Standard"></select></div>
+      <div class="chips" id="bookChips"></div>
+      <div class="empty" id="chEmpty" hidden></div>
+      <div class="list" id="chList"></div>
+    </div>
+    <div id="reader" class="screen" hidden>
+      <div class="row between">
+        <button class="linkbtn" id="rdBack">‹ Chapters</button>
+        <span class="note" id="rdPos"></span>
+      </div>
+      <h2 class="rdtitle" id="rdTitle"></h2>
+      <div class="note" id="rdBook"></div>
+      <article class="page" id="rdText" lang="en"></article>
+      <div class="rdbar">
+        <button class="btn" id="rdPrev">‹ Prev</button>
+        <button class="btn primary" id="rdListen">Listen</button>
+        <button class="btn" id="rdNext">Next ›</button>
+      </div>
+      <label class="note row" style="justify-content:center"><input type="checkbox" id="rdAuto" checked> <span id="rdAutoL">Keep reading the next page</span></label>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section class="screen" id="v-quiz" hidden>
+    <h1 class="title" id="qzTitle">Oral quiz</h1>
+    <p class="note" id="qzNote" style="margin:0">Sample questions. Chapter quizzes built from your textbook come next.</p>
+    <div class="card">
+      <div id="qtext" style="font-weight:500;font-size:1.05rem">Press Start. I'll read the question; answer by voice or typing.</div>
+      <form class="row" id="quizform">
+        <input type="text" id="qa" placeholder="Your answer" autocomplete="off">
+        <button class="btn primary" type="submit">Check</button>
+      </form>
+      <div class="row">
+        <button class="btn" type="button" id="qmic">Answer by voice</button>
+        <button class="btn" id="qstart">Start quiz</button>
+        <button class="btn" id="qnext" disabled>Next</button>
+      </div>
+      <div id="verdict"></div>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section class="screen" id="v-history" hidden>
+    <h1 class="title" id="hiTitle">History</h1>
+    <div class="list" id="convo"><div class="empty" id="convoEmpty">Your questions and answers appear here.</div></div>
+    <div class="vhead" style="margin-top:8px">Voice test log</div>
+    <div class="tablewrap"><table>
+      <thead><tr><th>#</th><th>Input</th><th>Heard / typed</th><th>Lang</th><th>Conf.</th><th>Source</th><th>Time</th></tr></thead>
+      <tbody id="logbody"><tr><td colspan="7" class="note">No attempts yet.</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="screen" id="v-settings" hidden>
+    <h1 class="title" id="setTitle">Settings</h1>
+    <div class="card">
+      <div class="set"><div><div data-l="cls"></div><div class="s" data-l="clsS"></div></div>
+        <select id="std" aria-label="Standard"></select></div>
+      <div class="set"><div><div data-l="spk"></div><div class="s" data-l="spkS"></div></div>
+        <select id="spoken" aria-label="Spoken language"><option value="auto" selected>Auto (தமிழ் + English)</option><option value="ta">தமிழ் only</option><option value="en">English only</option></select></div>
+      <div class="set"><div><div data-l="spd"></div><div class="s" id="rateval">0.9×</div></div>
+        <input type="range" id="rate" min="0.6" max="1.3" step="0.1" value="0.9" aria-label="Voice speed"></div>
+      <div class="set"><div><div data-l="auto"></div><div class="s" data-l="autoS"></div></div>
+        <input type="checkbox" id="autospeak" checked aria-label="Speak every answer"></div>
+      <div class="set"><div><div data-l="barge"></div><div class="s" data-l="bargeS"></div></div>
+        <input type="checkbox" id="bargein" checked aria-label="Interrupt by speaking"></div>
+      <div class="set"><div><div data-l="patient"></div><div class="s" data-l="patientS"></div></div>
+        <input type="checkbox" id="patient" aria-label="Wait longer for slow speakers"></div>
+      <div class="set"><div><div data-l="cues"></div><div class="s" data-l="cuesS"></div></div>
+        <input type="checkbox" id="cues" checked aria-label="Sound and vibration cues"></div>
+      <div class="set"><div><div data-l="mic"></div><div class="s" id="micinfo">—</div></div></div>
+    </div>
+    <div class="card">
+      <h2 data-l="tv"></h2>
+      <p class="note" style="margin:0" id="voiceNote">Pick one. Tap a voice to hear it.</p>
+      <div class="vhead" data-l="fem"></div>
+      <div class="voices" id="vF"></div>
+      <div class="vhead" data-l="mal"></div>
+      <div class="voices" id="vM"></div>
+      <div class="note" id="voiceinfo"></div>
+    </div>
+  </section>
+</div>
+
+<nav class="bottom" aria-label="Main">
+  <div class="in">
+    <button data-v="ask" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg><span data-l="ask">Ask</span></button>
+    <button data-v="chapters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H2zM22 4h-7a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h8z"/></svg><span data-l="ch">Chapters</span></button>
+    <button data-v="quiz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span data-l="quiz">Quiz</span></button>
+    <button data-v="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span data-l="hist">History</span></button>
+    <button data-v="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg><span data-l="set">Settings</span></button>
+  </div>
+</nav>
+
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let ui="en", sample=null, lastAnswer="", lastLang="en", attempt=0, phase="idle", qi=-1;
+
+/* ---------- App text (interface only — not the voice) ---------- */
+const T={
+ en:{ask:"Ask",ch:"Chapters",quiz:"Quiz",hist:"History",set:"Settings",tap:"Tap to ask",listen:"Listening… speak in Tamil or English",think:"Thinking…",deep:"Thinking it through…",speak:"Speaking…",
+     type:"Type your question",typeT:"Type instead",send:"Ask",qz:"Oral quiz",start:"Press Start. I'll read the question; answer by voice or typing.",
+     empty:"Your questions and answers appear here.",chEmpty:"Books for this standard aren't uploaded yet. After upload, every chapter opens page by page, and each page has a Listen button.",
+     demo:"Demo topics",back:"‹ Chapters",listen2:"Listen",prev:"‹ Prev",next:"Next ›",auto:"Keep reading the next page",pageOf:"Page",of:"of",noBooks:"No biology book for this class yet.",pages:"pages",notReady:"The {m} book for this class is still being prepared. Here is the answer from the {o} book.",open:"Open this page",ocr:"Scanned book: text read by OCR, may have small errors.",heardNone:"I didn't hear anything. Tap and try again.",stopped:"Stopped. Go ahead…",pick:"Pick one. Tap a voice to hear it.",patient:"Wait longer for slow speakers",patientS:"Gives more time to finish the question",cues:"Sound and vibration cues",cuesS:"A short beep when I start and stop listening",volHint:"Uyir always speaks at full volume. If it sounds quiet, turn up the phone's media volume.",lsnTa:"Tamil",lsnEn:"English",flip:"I couldn't catch that. Next time I'll listen for {l}.",
+     cls:"Class",clsS:"Sets how deep answers go",spk:"Spoken language",spkS:"Auto hears Tamil and English and answers in the same language",spd:"Voice speed",
+     auto:"Speak every answer",autoS:"Turn off to read silently",barge:"Interrupt by speaking",bargeS:"Start talking while I speak and I'll stop and listen",mic:"Microphone",tv:"Teacher voice",fem:"Female",mal:"Male"},
+ ta:{ask:"கேள்",ch:"பாடங்கள்",quiz:"வினாடி வினா",hist:"வரலாறு",set:"அமைப்புகள்",tap:"தொட்டுக் கேளுங்கள்",listen:"கேட்கிறேன்… தமிழிலோ ஆங்கிலத்திலோ பேசுங்கள்",think:"யோசிக்கிறேன்…",deep:"முழுமையாக யோசிக்கிறேன்…",speak:"பேசுகிறேன்…",
+     type:"கேள்வியைத் தட்டச்சு செய்யவும்",typeT:"தட்டச்சு செய்ய",send:"கேள்",qz:"வாய்மொழி வினாடி வினா",start:"தொடங்கு அழுத்தவும். நான் கேள்வியைப் படிப்பேன்; குரலிலோ தட்டச்சிலோ பதில் சொல்லுங்கள்.",
+     empty:"உங்கள் கேள்விகளும் பதில்களும் இங்கே வரும்.",chEmpty:"இந்த வகுப்புக்கான புத்தகங்கள் இன்னும் பதிவேற்றப்படவில்லை. பதிவேற்றிய பின், ஒவ்வொரு பாடமும் பக்கம் பக்கமாகத் திறக்கும்; ஒவ்வொரு பக்கத்திலும் கேட்கும் பொத்தான் இருக்கும்.",
+     demo:"மாதிரித் தலைப்புகள்",back:"‹ பாடங்கள்",listen2:"படித்துக் காட்டு",prev:"‹ முந்தைய",next:"அடுத்த ›",auto:"அடுத்த பக்கத்தையும் படி",pageOf:"பக்கம்",of:"/",noBooks:"இந்த வகுப்புக்கு உயிரியல் புத்தகம் இன்னும் இல்லை.",pages:"பக்கங்கள்",notReady:"இந்த வகுப்பின் {m} புத்தகம் இன்னும் தயாராகிறது. {o} புத்தகத்திலிருந்து பதில் இதோ.",open:"இந்தப் பக்கத்தைத் திற",ocr:"ஸ்கேன் செய்த புத்தகம்: OCR மூலம் படித்த உரை, சிறு பிழைகள் இருக்கலாம்.",heardNone:"எதுவும் கேட்கவில்லை. மீண்டும் தொடவும்.",stopped:"நிறுத்தினேன்… சொல்லுங்கள்",pick:"ஒன்றைத் தேர்வு செய்யுங்கள். கேட்க குரலைத் தொடவும்.",patient:"மெதுவாகப் பேசுபவர்களுக்குக் கூடுதல் நேரம்",patientS:"கேள்வியை முடிக்கக் கூடுதல் நேரம் தரும்",cues:"ஒலி மற்றும் அதிர்வு குறிப்புகள்",cuesS:"கேட்கத் தொடங்கும்போதும் முடிக்கும்போதும் ஒரு சிறு ஒலி",volHint:"உயிர் எப்போதும் முழு ஒலியில் பேசும். சத்தம் குறைவாக இருந்தால் போனின் மீடியா ஒலியை அதிகரிக்கவும்.",lsnTa:"தமிழ்",lsnEn:"ஆங்கிலம்",flip:"சரியாகக் கேட்கவில்லை. அடுத்த முறை {l} மொழியில் கேட்பேன்.",
+     cls:"வகுப்பு",clsS:"பதில் எவ்வளவு ஆழமாக இருக்கும் என்பதைத் தீர்மானிக்கும்",spk:"பேசும் மொழி",spkS:"தானாக: தமிழும் ஆங்கிலமும் கேட்டு, அதே மொழியில் பதில் சொல்லும்",spd:"குரல் வேகம்",
+     auto:"ஒவ்வொரு பதிலையும் பேசு",autoS:"அமைதியாகப் படிக்க அணைக்கவும்",barge:"பேசி இடைமறிக்கலாம்",bargeS:"நான் பேசும்போது நீங்கள் பேசினால், நிறுத்திக் கேட்பேன்",mic:"மைக்ரோஃபோன்",tv:"ஆசிரியர் குரல்",fem:"பெண் குரல்கள்",mal:"ஆண் குரல்கள்"}
+};
+const STDS=[["3","Std 3"],["4","Std 4"],["5","Std 5"],["6","Std 6"],["7","Std 7"],["8","Std 8"],["9","Std 9"],["10","Std 10"],["11B","Std 11 Bio-Botany"],["11Z","Std 11 Bio-Zoology"],["12B","Std 12 Bio-Botany"],["12Z","Std 12 Bio-Zoology"]];
+["std","chStd"].forEach(id=>{const sel=$(id);STDS.forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;sel.appendChild(o);});sel.value=store.get("std")||"12B";});
+$("std").onchange=()=>{store.set("std",$("std").value);$("chStd").value=$("std").value;};
+$("chStd").onchange=()=>{$("std").value=$("chStd").value;store.set("std",$("std").value);};
+
+const QUIZ=[
+ {q:{en:"Which pigment gives leaves their green colour?",ta:"இலைகளுக்குப் பச்சை நிறம் தரும் நிறமி எது?"},a:["chlorophyll","chlorophyl","குளோரோபில்","பச்சையம்"],
+  s:{en:"The answer is chlorophyll. It is the green pigment in chloroplasts that absorbs light for photosynthesis.",ta:"சரியான விடை பச்சையம். இது பசுங்கணிகங்களில் உள்ள பச்சை நிறமி; ஒளிச்சேர்க்கைக்கு ஒளியை உறிஞ்சுகிறது."}},
+ {q:{en:"Through which tiny openings on a leaf does water vapour escape?",ta:"இலையின் எந்தச் சிறு துளைகள் வழியாக நீராவி வெளியேறுகிறது?"},a:["stomata","stoma","இலைத்துளை","இலைத்துளைகள்"],
+  s:{en:"The answer is stomata. Guard cells open and close these pores, and water vapour leaves through them during transpiration.",ta:"சரியான விடை இலைத்துளைகள். காப்பு செல்கள் இவற்றைத் திறந்து மூடுகின்றன; நீராவிப்போக்கின்போது நீராவி இவற்றின் வழியாக வெளியேறுகிறது."}},
+ {q:{en:"Which organ pumps blood all over the body?",ta:"உடல் முழுவதும் இரத்தத்தை உந்தித் தள்ளும் உறுப்பு எது?"},a:["heart","hart","இதயம்"],
+  s:{en:"The answer is the heart. It has four chambers and pumps blood through the blood vessels.",ta:"சரியான விடை இதயம். இதில் நான்கு அறைகள் உள்ளன; இது இரத்தக் குழாய்கள் வழியாக இரத்தத்தை உந்தித் தள்ளுகிறது."}}
+];
+
+/* ---------- Language of what was SAID (decides answer + voice) ---------- */
+function detectLang(t){
+  const mode=$("spoken").value; if(mode!=="auto")return mode;
+  const ta=(t.match(/[஀-௿]/g)||[]).length, en=(t.match(/[A-Za-z]/g)||[]).length;
+  return ta>0&&ta>=en*0.5?"ta":"en";
+}
+
+/* ---------- Theme ---------- */
+function applyTheme(t){
+  const r=document.documentElement;
+  if(t==="dark"||t==="light") r.setAttribute("data-theme",t); else r.removeAttribute("data-theme");
+  const dark=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;
+  $("th-dark").setAttribute("aria-pressed",dark); $("th-light").setAttribute("aria-pressed",!dark);
+}
+$("th-light").onclick=()=>{applyTheme("light");store.set("theme","light");};
+$("th-dark").onclick=()=>{applyTheme("dark");store.set("theme","dark");};
+applyTheme(store.get("theme"));
+
+const PLAY='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg>';
+
+/* ---------- App language (text only) ---------- */
+function setUI(l){
+  ui=l; store.set("ui",l);
+  $("ui-en").setAttribute("aria-pressed",l==="en"); $("ui-ta").setAttribute("aria-pressed",l==="ta");
+  const t=T[l];
+  document.querySelectorAll("[data-l]").forEach(e=>e.textContent=t[e.dataset.l]);
+  $("q").placeholder=t.type; $("typeToggle").textContent=t.typeT; $("askbtn").textContent=t.send;
+  $("chTitle").textContent=t.ch; $("qzNote").textContent=l==="ta"?"மாதிரிக் கேள்விகள். உங்கள் பாடப்புத்தகத்திலிருந்து பாட வாரியான வினாடி வினா அடுத்து வரும்.":"Sample questions. Chapter quizzes built from your textbook come next."; $("qzTitle").textContent=t.qz; $("hiTitle").textContent=t.hist; $("setTitle").textContent=t.set;
+  $("voiceNote").textContent=t.pick; $("rdBack").textContent=t.back; $("rdPrev").textContent=t.prev; $("rdNext").textContent=t.next; $("rdListen").textContent=t.listen2; $("rdAutoL").textContent=t.auto;
+  if($("convoEmpty"))$("convoEmpty").textContent=t.empty;
+  if(phase==="idle") state(t.tap);
+  $("qtext").textContent=qi<0?t.start:`Q${qi+1}. `+QUIZ[qi].q[l];
+  renderBooks(); renderVoices();
+}
+$("ui-en").onclick=()=>setUI("en");
+$("ui-ta").onclick=()=>setUI("ta");
+/* ---------- Screens ---------- */
+function show(v,keepReader){
+  if(v==="chapters"&&!keepReader){ $("reader").hidden=true; $("chHome").hidden=false; renderBooks(); }
+  document.querySelectorAll("nav.bottom button").forEach(x=>{if(x.dataset.v===v)x.setAttribute("aria-current","page");else x.removeAttribute("aria-current");});
+  ["ask","chapters","quiz","history","settings"].forEach(x=>$("v-"+x).hidden=x!==v);
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("nav.bottom button").forEach(b=>b.onclick=()=>show(b.dataset.v));
+$("typeToggle").onclick=()=>{$("askform").hidden=!$("askform").hidden;if(!$("askform").hidden)$("q").focus();};
+
+/* ================= TEACHER VOICES =================
+   10 voice profiles (5 female, 5 male). Each uses the best matching voice installed on the
+   phone for the language being spoken, plus its own pitch and pace. All free: the phone's own speech engine. */
+const VOICES=[
+ {id:"malar",g:"f",n:{en:"Malar",ta:"மலர்"},d:{en:"Warm class teacher",ta:"அன்பான வகுப்பாசிரியர்"},p:1.06,r:0.97},
+ {id:"kayal",g:"f",n:{en:"Kayal",ta:"கயல்"},d:{en:"Bright and lively",ta:"உற்சாகமான குரல்"},p:1.14,r:1.04},
+ {id:"nila",g:"f",n:{en:"Nila",ta:"நிலா"},d:{en:"Calm and slow",ta:"அமைதியான, மெதுவான"},p:1.02,r:0.9},
+ {id:"thendral",g:"f",n:{en:"Thendral",ta:"தென்றல்"},d:{en:"Gentle storyteller",ta:"மென்மையான கதைசொல்லி"},p:1.1,r:0.94},
+ {id:"isai",g:"f",n:{en:"Isai",ta:"இசை"},d:{en:"Clear exam voice",ta:"தெளிவான தேர்வுக் குரல்"},p:1.0,r:1.0},
+ {id:"kathir",g:"m",n:{en:"Kathir",ta:"கதிர்"},d:{en:"Steady teacher",ta:"நிதானமான ஆசிரியர்"},p:0.93,r:0.96},
+ {id:"arivu",g:"m",n:{en:"Arivu",ta:"அறிவு"},d:{en:"Friendly elder brother",ta:"நட்பான அண்ணன்"},p:0.98,r:1.0},
+ {id:"vetri",g:"m",n:{en:"Vetri",ta:"வெற்றி"},d:{en:"Energetic coach",ta:"சுறுசுறுப்பான பயிற்சியாளர்"},p:0.96,r:1.05},
+ {id:"mugil",g:"m",n:{en:"Mugil",ta:"முகில்"},d:{en:"Deep and calm",ta:"ஆழ்ந்த, அமைதியான"},p:0.88,r:0.92},
+ {id:"senthil",g:"m",n:{en:"Senthil",ta:"செந்தில்"},d:{en:"Clear exam voice",ta:"தெளிவான தேர்வுக் குரல்"},p:0.92,r:1.0}
+];
+let voiceId=store.get("voice")||"malar";
+const FEM=/female|woman|heera|pallavi|neerja|kalpana|veena|swara|zira|samantha|aashi|ananya|kavya|priya|lekha|ta-in-x-tag|en-in-x-ena|en-in-x-enc/i;
+const MAL=/\bmale\b|\bman\b|ravi|hemant|valluvar|prabhat|david|mark|aarav|kunal|rehaan|prakash|ta-in-x-tad|en-in-x-end|en-in-x-ene|en-in-x-ahp/i;
+const synth=window.speechSynthesis||null;
+// higher = better sounding (network / neural voices first, robotic ones last)
+function vq(v){ const n=(v.name||"")+" "+(v.voiceURI||""); let q=0;
+  if(v.localService===false) q+=3; if(/google/i.test(n)) q+=2; if(/natural|neural|online|premium|enhanced|network|wavenet/i.test(n)) q+=3;
+  if(/compact|espeak|robot/i.test(n)) q-=4; return q; }
+function voicesFor(l){if(!synth)return[];const c=l==="ta"?"ta":"en";const vs=synth.getVoices();
+  let list=vs.filter(v=>v.lang&&v.lang.toLowerCase().replace("_","-")===(c==="ta"?"ta-in":"en-in"));
+  if(!list.length) list=vs.filter(v=>v.lang&&v.lang.toLowerCase().startsWith(c));
+  return list.sort((a,b)=>vq(b)-vq(a));}
+function profile(){return VOICES.find(v=>v.id===voiceId)||VOICES[0];}
+function pickVoice(l,prof){
+  const list=voicesFor(l); if(!list.length)return null;
+  const g=prof.g==="f"?list.filter(v=>FEM.test(v.name)&&!MAL.test(v.name)):list.filter(v=>MAL.test(v.name));
+  let pool=g.length?g:list; const top=vq(pool[0]); pool=pool.filter(v=>vq(v)>=top-1);   // only the best-sounding voices
+  const idx=VOICES.filter(x=>x.g===prof.g).indexOf(prof);
+  return pool[idx%pool.length];
+}
+function renderVoices(){
+  ["f","m"].forEach(g=>{const box=$(g==="f"?"vF":"vM");box.textContent="";
+    VOICES.filter(v=>v.g===g).forEach(v=>{
+      const b=document.createElement("button");b.className="voice";b.type="button";b.setAttribute("aria-pressed",v.id===voiceId);
+      const av=document.createElement("span");av.className="av";av.textContent=v.n[ui].slice(0,1);
+      const tx=document.createElement("span");tx.style.minWidth="0";
+      const nm=document.createElement("div");nm.className="nm";nm.textContent=v.n[ui];
+      const ds=document.createElement("div");ds.className="ds";ds.textContent=v.d[ui];
+      tx.append(nm,ds);b.append(av,tx);
+      b.onclick=()=>{voiceId=v.id;store.set("voice",v.id);renderVoices();
+        speak(ui==="ta"?`வணக்கம், நான் ${v.n.ta}. உங்கள் உயிரியல் ஆசிரியர்.`:`Hello, I'm ${v.n.en}, your Biology teacher.`,ui);};
+      box.appendChild(b);});});
+  describeVoices();
+}
+function describeVoices(){
+  if(!synth){$("voiceinfo").textContent="This browser can't speak. Use Chrome on Android.";return;}
+  const en=voicesFor("en").length, ta=voicesFor("ta").length;
+  $("voiceinfo").textContent=`Voices on this device: English ${en}, Tamil ${ta}. `+(ta?"":"No Tamil voice yet: on Android open Settings → Text-to-speech → Google → install Tamil. ")+T[ui].volHint;
+}
+if(synth){synth.onvoiceschanged=describeVoices;}
+
+/* ================= VOICE ENGINE =================
+   idle → listening → thinking → speaking → idle. Tap once to ask; it stops on its own when you stop
+   talking. Tap or talk while it's thinking/speaking: it stops, listens, answers only the latest question. */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let reqId=0, abortCtl=null, spokenText="";
+let rec=null, recMode=null, silenceTimer=null, hardTimer=null;
+let wakeLock=null;
+async function keepAwake(on){ try{ if(on&&!wakeLock&&navigator.wakeLock){ wakeLock=await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release",()=>{wakeLock=null;}); } else if(!on&&wakeLock){ const w=wakeLock; wakeLock=null; await w.release(); } }catch(e){} }
+document.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"&&phase!=="idle") keepAwake(true); });
+function setPhase(p,label){
+  phase=p; const sp=$("speaker");
+  sp.classList.toggle("live",p==="listening"); sp.classList.toggle("talk",p==="speaking"||p==="thinking");
+  if(p!=="listening")sp.classList.remove("hearing");
+  keepAwake(p!=="idle");
+  let lbl=label||({idle:T[ui].tap,listening:T[ui].listen,thinking:T[ui].think,speaking:T[ui].speak}[p]);
+  if(p==="listening"&&!label) lbl+=" · "+(curRecLang==="ta"?T[ui].lsnTa:T[ui].lsnEn);
+  state(lbl);
+}
+function state(m,err){const s=$("state");s.textContent=m;s.classList.toggle("err",!!err);}
+let queue=0, streamDone=true, onQueueEmpty=null;
+// Make text sound right when read aloud: drop bullets, figure/section numbers and symbols; say units in words.
+function speakable(t,l){
+  let x=" "+t+" ";
+  x=x.replace(/https?:\/\/\S+/g," ");
+  x=x.replace(/\(\s*(?:Fig(?:ure)?\.?|Table|படம்|அட்டவணை)\s*[\d.]+[a-z]?\s*\)/gi," ");
+  x=x.replace(/^\s*(?:Fig(?:ure)?\.?|Table|படம்|அட்டவணை)\s*\d+(?:\.\d+)*\s*:?/i," ");
+  x=x.replace(/^\s*\d+(?:\.\d+){1,3}\s+/," ");
+  x=x.replace(/[•▪◦●■□►▶✓✔*#~_|^<>{}\[\]¾]/g," ");
+  const ta=l==="ta";
+  x=x.replace(/\bCO2\b|CO₂/g,ta?" கார்பன் டை ஆக்சைடு ":" carbon dioxide ").replace(/\bH2O\b|H₂O/g,ta?" நீர் ":" water ").replace(/\bO2\b|O₂/g,ta?" ஆக்சிஜன் ":" oxygen ");
+  x=x.replace(/(\d)\s*%/g,ta?"$1 சதவீதம்":"$1 percent").replace(/°\s?C\b/g,ta?" டிகிரி செல்சியஸ்":" degrees Celsius");
+  if(ta) x=x.replace(/\be\.g\.,?/gi," எடுத்துக்காட்டாக, ");
+  else x=x.replace(/\be\.g\.,?/gi," for example, ").replace(/\bi\.e\.,?/gi," that is, ").replace(/\betc\./gi," and so on. ").replace(/&/g," and ").replace(/\bvs\.?\b/gi," versus ");
+  x=x.replace(/\s+([,.;:!?])/g,"$1").replace(/([,;:])(?:\s*[,;:])+/g,"$1").replace(/\s{2,}/g," ").trim();
+  return x;
+}
+// split very long sentences at commas so no single utterance runs too long (some engines stop after ~15 s)
+function pieces(t){ if(t.length<=220) return [t]; const out=[]; let cur="";
+  t.split(/(?<=[,;:])\s+/).forEach(p=>{ if((cur+" "+p).length>220&&cur){out.push(cur);cur=p;} else cur=cur?cur+" "+p:p; });
+  if(cur)out.push(cur); return out.flatMap(p=>p.length>260?p.match(/.{1,220}(\s|$)/g):[p]); }
+const SQ=[]; let lastSpeechEvent=0;
+function sayChunk(text,l,my){
+  if(!synth||!text.trim())return;
+  pieces(speakable(text,l)).forEach(part=>{ if(!part.trim()||!/[\p{L}\p{N}]/u.test(part))return;
+    const u=new SpeechSynthesisUtterance(part); const prof=profile();
+    const v=pickVoice(l,prof); if(v){u.voice=v;u.lang=v.lang;} else u.lang=l==="ta"?"ta-IN":"en-IN";
+    u.pitch=prof.p; u.rate=(parseFloat($("rate").value)||0.9)*prof.r; u.volume=1;
+    const item={u,my,done:false,started:false}; SQ.push(item);
+    queue++; spokenText+=" "+part;
+    u.onstart=()=>{ item.started=true; lastSpeechEvent=Date.now(); if(my===reqId&&phase!=="listening"){setPhase("speaking");$("caption").textContent=part;} };
+    u.onboundary=()=>{ lastSpeechEvent=Date.now(); };
+    u.onend=u.onerror=()=>{ if(item.done)return; item.done=true; lastSpeechEvent=Date.now(); const k=SQ.indexOf(item); if(k>=0)SQ.splice(k,1);
+      queue--; if(my!==reqId)return; if(queue<=0&&streamDone){const f=onQueueEmpty;onQueueEmpty=null;f&&f();} };
+    lastSpeechEvent=Date.now(); synth.speak(u);
+  });
+}
+// If the phone's speech engine silently drops the queue (it happens after cancel on some Android phones), say it again.
+setInterval(()=>{ if(!synth||!SQ.length)return; const live=SQ.filter(i=>i.my===reqId&&!i.done);
+  if(!live.length){SQ.length=0;return;}
+  if(!synth.speaking&&!synth.pending&&Date.now()-lastSpeechEvent>2500){ lastSpeechEvent=Date.now(); synth.cancel(); live.forEach(i=>synth.speak(i.u)); } },1200);
+function stopSpeaking(){if(synth)synth.cancel();queue=0;SQ.length=0;}
+function splitSentences(t){
+  const out=[];let rest=t.replace(/^\s+/,"");const re=/([^.!?।\n]+[.!?।]+["')\]]*)(\s+|$)|([^\n]+)\n+/;
+  let m; while((m=rest.match(re))&&m.index===0){out.push(m[1]||m[3]);rest=rest.slice(m[0].length);}
+  return {done:out.concat(rest.trim()?[rest]:[]),pending:rest};
+}
+let AC=null;
+function cue(kind){ if(!$("cues").checked)return;
+  try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended")AC.resume();
+    const o=AC.createOscillator(),g=AC.createGain(),t=AC.currentTime,f={start:[620,940],stop:[880,560],error:[340,250]}[kind];
+    o.type="sine"; o.frequency.setValueAtTime(f[0],t); o.frequency.linearRampToValueAtTime(f[1],t+0.13);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.35,t+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t+0.2);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.22); }catch(e){}
+  try{ navigator.vibrate&&navigator.vibrate(kind==="error"?[40,70,40]:28); }catch(e){} }
+function speak(text,l,after){
+  const my=++reqId; cancelWork(); stopSpeaking(); stopRec(); spokenText=""; streamDone=true;
+  if(!synth){after&&after();return;}
+  splitSentences(text).done.forEach(s=>sayChunk(s,l||detectLang(text),my));
+  onQueueEmpty=()=>{stopRec();setPhase("idle");after&&after();};
+  startBargeIn(my);
+}
+$("replay").onclick=()=>speak(lastAnswer,lastLang);
+$("rate").oninput=()=>$("rateval").textContent=$("rate").value+"×";
+
+/* ---- microphone: no separate audio capture, so the browser asks only once per site ---- */
+async function micStatus(){
+  if(!SR){$("micinfo").textContent="Voice input not available here. Open in Chrome on Android.";return;}
+  let st="";try{const p=await navigator.permissions.query({name:"microphone"});st=p.state;p.onchange=micStatus;}catch(e){}
+  const persist=location.protocol==="https:"?"":" Opened as a local file, Chrome may ask every time; open it from an https link and it remembers.";
+  $("micinfo").textContent=(st==="granted"?"Allowed. It won't ask again.":st==="denied"?"Blocked. Allow the microphone in the browser's site settings.":"Asks once, the first time you tap.")+persist;
+}
+function stopRec(){
+  clearTimeout(silenceTimer);clearTimeout(hardTimer);
+  if(rec){const r=rec;rec=null;recMode=null;r.onend=null;r.onresult=null;r.onerror=null;try{r.abort();}catch(e){}}
+  $("speaker").classList.remove("hearing");
+}
+const norm=s=>s.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu," ").split(/\s+/).filter(Boolean);
+function isEcho(t){const w=norm(t);if(!w.length)return true;const said=new Set(norm(spokenText));return w.filter(x=>said.has(x)).length/w.length>=0.6;}
+let listenTarget="main";
+// Auto mode listens in the language the student used last (starting with the app language);
+// if a turn is missed, the next turn tries the other language.
+let curRecLang="ta";
+function recLang(){ const m=$("spoken").value; curRecLang=m!=="auto"?m:(store.get("heardLang")||(ui==="en"?"en":"ta")); return curRecLang==="en"?"en-IN":"ta-IN"; }
+const IS_ANDROID=/Android/i.test(navigator.userAgent);
+let missStreak=0;
+// how well a heard sentence matches the words in this class's books (used to pick the best of several hearings)
+function vocabHits(text){ const std=$("std").value; let hits=0; const tk=toks(text); if(!tk.length)return 0;
+  booksFor(std).forEach(m=>{ const b=BOOKS[m.id]; if(b&&b.idx) tk.forEach(t=>{ if(b.idx.df.has(t))hits++; }); }); return hits/tk.length; }
+function bestAlt(res){ let best=res[0], bs=-1; for(let j=0;j<res.length;j++){ const a=res[j]; if(!a||!a.transcript)continue;
+  const sc=vocabHits(a.transcript)*2+(j===0?0.6:0)+(a.confidence||0)*0.5; if(sc>bs){bs=sc;best=a;} } return best; }
+function listen(target){
+  if(!SR){state(ui==="ta"?"இங்கே குரல் உள்ளீடு இல்லை. Chrome-ல் திறக்கவும் அல்லது தட்டச்சு செய்யவும்.":"Voice input isn't available in this view. Open the file in Chrome, or type instead.",true);$("askform").hidden=false;return;}
+  listenTarget=target||"main";
+  reqId++; cancelWork(); stopSpeaking(); stopRec();
+  runRec("capture");
+}
+function runRec(mode){
+  const r=new SR(); rec=r; recMode=mode;
+  r.lang=recLang(); r.interimResults=true; r.continuous=!IS_ANDROID; r.maxAlternatives=5;
+  let fin="",conf=null,heardAny=false,retried=false,spoke=false;
+  const patient=$("patient").checked;
+  const finish=()=>{ if(rec!==r)return; const text=fin.trim(); stopRec(); micStatus();
+    if(text){ missStreak=0; cue("stop"); $("caption").textContent=text;
+      if($("spoken").value==="auto"){ const dl=detectLang(text); store.set("heardLang",dl); }
+      deliver(text,conf); }
+    else { cue("error"); missStreak++;
+      let msg=T[ui].heardNone;
+      if($("spoken").value==="auto"&&spoke){   // they spoke but nothing was recognised: likely the other language
+         const other=curRecLang==="ta"?"en":"ta"; store.set("heardLang",other);
+        msg+=" "+T[ui].flip.replace("{l}",other==="ta"?T[ui].lsnTa:T[ui].lsnEn); }
+      setPhase("idle",msg); speak(msg,ui); } };
+  r.onstart=()=>{ if(mode==="capture"){ setPhase("listening"); cue("start");
+      hardTimer=setTimeout(()=>{try{r.stop();}catch(e){}},patient?35000:22000);
+      silenceTimer=setTimeout(()=>{if(!heardAny)finish();},patient?11000:8000);} };
+  r.onsoundstart=()=>{ if(recMode==="capture")$("speaker").classList.add("hearing"); };
+  r.onspeechstart=()=>{ spoke=true; if(recMode==="capture")$("speaker").classList.add("hearing"); };
+  r.onsoundend=()=>$("speaker").classList.remove("hearing");
+  r.onresult=e=>{
+    // rebuild the whole sentence each time (avoids repeated words on Android)
+    const parts=[]; let interim="";
+    for(let i=0;i<e.results.length;i++){ const x=e.results[i]; const alt=bestAlt(x); const t=(alt&&alt.transcript||"").trim(); if(!t)continue;
+      if(x.isFinal){ const last=parts.length?parts[parts.length-1].toLowerCase():"";
+        if(last&&t.toLowerCase().startsWith(last)) parts[parts.length-1]=t;
+        else if(!(last&&last.endsWith(t.toLowerCase()))) parts.push(t);
+        conf=alt.confidence; }
+      else interim+=(interim?" ":"")+t; }
+    const finalText=parts.join(" ");
+    if(mode==="barge"){
+      const probe=(finalText+" "+interim).trim();
+      if(norm(probe).length<2||isEcho(probe))return;
+      reqId++; cancelWork(); stopSpeaking(); recMode=mode="capture"; spokenText=""; cue("start");
+      setPhase("listening",T[ui].stopped);
+      hardTimer=setTimeout(()=>{try{r.stop();}catch(e){}},patient?35000:22000);
+    }
+    heardAny=true; fin=finalText;
+    const h=$("caption");h.textContent=fin;if(interim){const sp=document.createElement("span");sp.className="interim";sp.textContent=" "+interim;h.appendChild(sp);}
+    // wait a little longer after very short phrases, and longer still in "slow speakers" mode
+    const words=norm(fin+" "+interim).length;
+    const wait=(words<3?2000:1300)+(interim?500:0)+(patient?1200:0);
+    clearTimeout(silenceTimer); silenceTimer=setTimeout(finish,wait);
+  };
+  r.onerror=e=>{ if(rec!==r||mode==="barge")return;
+    if((e.error==="network"||e.error==="aborted")&&!retried&&mode==="capture"){ retried=true; setTimeout(()=>{ if(rec===r){ try{r.start();}catch(_){} } },400); return; }
+    if(e.error==="no-speech"){ finish(); return; }
+    const m={"not-allowed":"Microphone not allowed. Allow it in the browser's site settings.","service-not-allowed":"Microphone not allowed. Allow it in the browser's site settings.","audio-capture":"No microphone found.","network":"Voice input needs internet."}[e.error];
+    if(m){stopRec();setPhase("idle");state(m,true);cue("error");speak(m,"en");micStatus();} };
+  r.onend=()=>{ if(rec!==r)return;
+    if(recMode==="capture"){ if(IS_ANDROID&&!fin.trim()&&heardAny===false&&!retried){ retried=true; try{r.start();return;}catch(e){} } finish(); }
+    else if(phase==="speaking"||phase==="thinking"){ rec=null; setTimeout(()=>{ if(!rec&&(phase==="speaking"||phase==="thinking")) runRec("barge"); },150); } };
+  try{r.start();}catch(e){ if(mode==="capture")state("Could not start the microphone.",true); }
+}
+function startBargeIn(my){
+  if(!SR||!$("bargein").checked||rec)return;
+  setTimeout(()=>{ if(my===reqId&&!rec&&(phase==="speaking"||phase==="thinking")) runRec("barge"); },400);
+}
+function deliver(text,conf){
+  if(typeof listenTarget==="function"){const f=listenTarget;listenTarget="main";f(text,conf);}
+  else ask(text,"voice",conf);
+}
+$("speaker").onclick=()=>{
+  if(phase==="listening"){ if(rec&&recMode==="capture"){try{rec.stop();}catch(e){}} return; }
+  listen("main");
+};
+
+/* ================= TEXTBOOKS =================
+   Books are JSON files: chapters + pages (pdf page n, printed page pg, chapter u, text t).
+   Answers are found by searching the pages of the student's class, in the language they spoke. Free and offline. */
+let CATALOG=[]; const BOOKS={};
+const SEG=(typeof Intl!=="undefined"&&Intl.Segmenter)?new Intl.Segmenter("ta",{granularity:"grapheme"}):null;
+const STOP_EN=new Set("what is are the a an of in on to and or for with by from how why does do did explain describe define definition meaning mean tell me about give short note write which who whom whose when where was were be been being this that these those it its as at into than then there their they them can could would should will shall may might difference differences between briefly detail details some any your you i we our please brief".split(" "));
+const STOP_TA=new Set(["என்றால்","என்ன","என்பது","என்பவை","யாவை","யாது","எது","எவை","ஏன்","எப்படி","எவ்வாறு","விளக்கு","விளக்குக","விளக்கவும்","விளக்கம்","பற்றி","கூறு","கூறுக","கூறவும்","சொல்","சொல்லு","சொல்லுங்கள்","என்று","மற்றும்","ஒரு","இது","அது","இந்த","அந்த","வேறுபாடு","வேறுபாடுகள்","வேறுபடுத்துக","என்னென்ன","எத்தனை","யார்","எங்கு","எப்போது","தருக","எழுதுக","எழுது","குறிப்பு","வரைக","என","எனப்படும்","ஆகும்","உள்ளன","உள்ளது"]);
+function graphemes(w){return SEG?[...SEG.segment(w)].map(x=>x.segment):[...w];}
+function stem(w){
+  if(/[\u0B80-\u0BFF]/.test(w)){ if(STOP_TA.has(w))return null; const g=graphemes(w); if(g.length<2)return null;
+    return taPrefix(g,4); }
+  if(STOP_EN.has(w)||w.length<3||/^\d+$/.test(w))return null;
+  return w.replace(/ies$/,"y").replace(/(ss)es$/,"$1").replace(/([^su])s$/,"$1").replace(/(ing|ed)$/,"").replace(/(ation|ations)$/,"at");
+}
+// Tamil compounds are written both joined and apart ("மகரந்தச்சேர்க்கை" / "மகரந்தச் சேர்க்கை"):
+// split a long Tamil word at a doubled-consonant joint so both parts are matched.
+function splitTa(w){ const g=graphemes(w); if(g.length<7) return null;
+  for(let i=g.length-3;i>=3;i--){ const a=g[i-1], b=g[i];
+    if(a.length===2&&a[1]==="\u0BCD"&&b[0]===a[0]) return [g.slice(0,i).join(""), g.slice(i).join("")]; }
+  return null; }
+// Tamil words share a 4-letter root; long words also keep a 6-letter form so specific terms stay specific
+function taPrefix(g,n){ const st=g.slice(0,Math.min(n,g.length)); while(st.length>2&&/\u0BCD$/.test(st[st.length-1]))st.pop(); return st.join(""); }
+function toks(s){ const out=[]; (s.toLowerCase().match(/[\p{L}\p{M}\p{N}]+/gu)||[]).forEach(w=>{
+    const st=stem(w); if(!st) return; out.push(st);
+    if(/[\u0B80-\u0BFF]/.test(w)){ const g=graphemes(w);
+      if(g.length>=8){ const l6=taPrefix(g,6); if(l6!==st) out.push(l6); }
+      const sp=splitTa(w); if(sp){ const r=stem(sp[1]); if(r&&r!==st) out.push(r); } } });
+  return out; }
+function tidy(t){return t.replace(/\p{Co}/gu,"•").replace(/-\n(?=[a-z])/g,"").replace(/([^\n])\n(?!\n|•|\+|\d+[.)]|[A-Z][a-z]*:)/g,"$1 ").replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim();}
+// for searching: join wrapped lines of running text, but keep short label lines (figure labels, headings) apart
+function tidyIdx(t){
+  const L=t.replace(/\p{Co}/gu,"•").replace(/-\n(?=[a-z])/g,"").split("\n").map(x=>x.trim()); let out="";
+  const isLabel=(x,next,prev)=>{ if(!x||x.length>=28||/[.,;:(=\-]$/.test(x))return false;
+    // Tamil: a short line is a heading only when it stands alone (narrow book columns often hold just two words)
+    const w=x.split(/\s+/); if(/[\u0B80-\u0BFF]/.test(x)) return w.length<=2&&!!next&&(!prev||/[.:?!)]$/.test(prev));
+    return w.length<=4&&/^[A-Z0-9]/.test(x)&&!/\b(to|of|the|and|a|an|in|is|are|by|with|for|from|on|or)$/i.test(x)&&!!next&&/^[A-Z0-9•]/.test(next); };
+  L.forEach((x,i)=>{ if(!x){out+="\n\n";return;} const prev=out.slice(-1);
+    if(isLabel(x,L[i+1],L[i-1])) out+=(prev&&prev!=="\n"?"\n":"")+x+"\n"; else out+=(prev&&prev!=="\n"?" ":"")+x; });
+  return out.replace(/[ \t]+/g," ").replace(/\n{3,}/g,"\n\n").trim();
+}
+
+function buildIndex(b){
+  const chunks=[]; const df=new Map(); let total=0;
+  const titles={}; b.chapters.forEach(c=>titles[c.u]=c.title);
+  b.pages.forEach((p,pi)=>{
+    const paras=tidyIdx(p.t).split(/\n\s*\n|\n(?=•)/).map(x=>x.trim()).filter(x=>x.length>0);
+    let buf="";
+    const push=()=>{ if(buf.trim().length<25){buf="";return;} const tk=toks(buf); if(!tk.length){buf="";return;}
+      const tf=new Map(); tk.forEach(t=>tf.set(t,(tf.get(t)||0)+1)); tf.forEach((_,t)=>df.set(t,(df.get(t)||0)+1));
+      chunks.push({pi,text:buf.trim(),tf,len:tk.length,title:new Set(toks(titles[p.u]||""))}); total+=tk.length; buf=""; };
+    paras.forEach(x=>{ buf+=(buf?"\n":"")+x; if(buf.length>320)push(); }); push();
+  });
+  return {chunks,df,avg:total/Math.max(1,chunks.length)};
+}
+async function loadCatalog(){
+  try{const r=await fetch("data/catalog.json");CATALOG=await r.json();}catch(e){CATALOG=[];}
+  renderBooks(); return CATALOG;
+}
+async function loadBook(id){
+  if(BOOKS[id])return BOOKS[id];
+  const r=await fetch("data/books/"+id+".json"); const b=await r.json(); b.idx=null; BOOKS[id]=b; return b;
+}
+function booksFor(std,med){return CATALOG.filter(b=>b.std===std&&(!med||b.medium===med));}
+const DEF0=/\b(is called|are called|is known as|are known as|is defined|refers to|is the process|are the|is a|is an)\b|என்பது|எனப்படும்|எனப்படுகிறது|என்று அழைக்கப்படுகிறது|ஆகும்/;
+function splitSent(t){return t.replace(/\n+/g,"\u2029").split(/\u2029/).flatMap(x=>x.split(/(?<=[.!?।])\s+(?=[A-Z\u0B80-\u0BFF"'(•¾])|\s(?=\d+\.\d+(?:\.\d+)*\s+[A-Z\u0B80-\u0BFF])/)).map(x=>x.trim()).filter(x=>x.length>2);}
+const NOISE=/Choose the correct|Evaluation|Answer the following|Fill in the blanks|Match the following|True or False|Multiple choice|சரியான விடையை|மதிப்பீடு|பொருத்துக|கோடிட்ட இடத்தை|சரியா தவறா|Learning Objectives|கற்றல் நோக்கங்கள்|Chapter Outline|Concept Map|ICT Corner|Scan the QR|QR code|பாட உள்ளடக்கம்|பாடஉள்ளடக்கம்|பாடச் சுருக்கம்|மதிப்பீடு|கருத்து வரைபடம்|இணையச் செயல்பாடு/i;
+const SIDE=/Info bit|Activity|Do you know|More to know|Think|செயல்பாடு|உங்களுக்குத் தெரியுமா|மேலும் அறிந்துகொள்வோம்/i;
+function sentScore(x,qt,idf,lead){
+  x=x.replace(/^\s*\d+(\.\d+)*\s*/,"");
+  const tk=toks(x); if(!tk.length)return 0; const set=new Set(tk); let s=0;
+  const key=qt.reduce((a,t)=>idf(t)>idf(a)?t:a,qt[0]); const hasKey=set.has(key)||qt.length===1;
+  qt.forEach(t=>{if(set.has(t))s+=idf(t);});
+  // a definition: "<term> is/are/means ..." or "<term> என்பது ..." right at the start of the sentence
+  const words=(x.replace(/\([^)]*\)/g,' ').match(/[\p{L}\p{M}\p{N}]+/gu)||[]).filter((w,i,a)=>i===0||w.toLowerCase()!==a[i-1].toLowerCase()).slice(0,6);
+  if(/^["'‘“(]?[A-Z\u0B80-\u0BFF]/.test(x)) for(let i=0;i<Math.min(3,words.length-1);i++){
+    const st=stem(words[i].toLowerCase());
+    if(st&&qt.includes(st)){
+      const nxt=words.slice(i+1,i+4).join(" ").toLowerCase();
+      if(hasKey&&(/^(is|are|means|refers)\b/.test(nxt)||/\u0B8E\u0BA9\u0BCD\u0BAA\u0BA4\u0BC1|\u0B8E\u0BA9\u0BCD\u0BAA\u0BB5\u0BC8|\u0B8E\u0BA9\u0BAA\u0BCD\u0BAA\u0B9F\u0BC1\u0BB5\u0BA4\u0BC1/.test(nxt))){ s+=lead*((i===0||(i===1&&/^(the|a|an)$/i.test(words[0])))?2.5:1.0); }
+      break;
+    }
+  }
+  // "...is called a tissue" / "...known as ..." / "... எனப்படும்"
+  const m=x.match(/\b(?:is|are)\s+(?:called|known as|termed|referred to as)\s+(?:an?\s+|the\s+)?([^,.;]{1,40})/i);
+  if(m&&hasKey&&toks(m[1]).slice(0,3).includes(key)) s+=lead*3;
+  for(const mm of x.replace(/\([^)]*\)/g," ").matchAll(/((?:[\p{L}\p{M}]+\s+){0,3}[\p{L}\p{M}]+)\s+(?:எனப்படும்|எனப்படுகிறது|என்று அழைக்கப்படுகிறது|என அழைக்கப்படுகிறது|என்று பெயர்)/gu)){
+    const near=toks(mm[1].split(/\s+/).slice(-Math.max(2,qt.length)).join(' '));
+    if(qt.every(t=>near.includes(t))){ s+=lead*3; break; } }
+  { const em=x.match(/[\p{L}\p{M}]+\u0BC7\s+([\p{L}\p{M}]+)(?:\s+\u0B86\u0B95\u0BC1\u0BAE\u0BCD)?\s*[.]?\s*$/u); if(em&&qt.includes(stem(em[1]))) s+=lead*2.5; }   // "...கூட்டமே திசு (ஆகும்)."
+  if(x.length<40) s*=0.5;
+  if((x.match(/(^|\s)\(?[a-dA-D]\)\s/g)||[]).length>=2||/\b(Choose|Pick out|Fill in|Match the)\b/i.test(x)) s*=0.15;
+  if(/\?\s*$/.test(x)||/^\(?[a-d]\)\s/.test(x)||/^\d+\.\s+[A-Z]/.test(x)&&/\b(Describe|Explain|Name|Write|What|Why|How|Define|Give|List|Mention|State)\b/.test(x)) s*=0.25;
+  const letters=(x.match(/[\p{L}\p{M}]/gu)||[]).length; if(letters/x.length<0.7) s*=0.4;
+  if((x.match(/(^|\s)\d+[.)]\s/g)||[]).length>=3) s*=0.4;
+  return s;
+}
+function lev(a,b,max){ if(Math.abs(a.length-b.length)>max)return max+1; let prev=Array.from({length:b.length+1},(_,j)=>j);
+  for(let i=1;i<=a.length;i++){ const cur=[i]; let lo=i; for(let j=1;j<=b.length;j++){ cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1)); if(cur[j]<lo)lo=cur[j]; } if(lo>max)return max+1; prev=cur; } return prev[b.length]; }
+function search(b,q,deep){
+  if(!b.idx)b.idx=buildIndex(b);
+  const {chunks,df,avg}=b.idx; const N=chunks.length; let qt=[...new Set(toks(q))];
+  if(!qt.length)return null;
+  // words the book never uses: try a close spelling (same first letters), otherwise the book does not cover this
+  if(!b.idx.keys)b.idx.keys=[...df.keys()];
+  const fixed=[]; let missing=0;
+  qt.forEach(t=>{ if(df.has(t)){fixed.push(t);return;}
+    const pre=[...t].slice(0,Math.max(4,Math.min(6,[...t].length-1))).join("");
+    let best=null,bn=0; b.idx.keys.forEach(k=>{ if(k.startsWith(pre)){const n=df.get(k); if(n>bn){bn=n;best=k;}} });
+    if(!best){ // misheard word: closest word in this book (one letter off; two for long English words)
+      const g=graphemes(t), latin=/^[a-z]/.test(t), max=latin&&t.length>=9?2:1; let bd=max+1;
+      // only long words: short ones are usually real everyday words that are simply not in this book
+      if(latin?t.length>=7:g.length>=5) b.idx.keys.forEach(k=>{ const kg=graphemes(k); if(Math.abs(kg.length-g.length)>max)return; const d=lev(g,kg,max); if(d<bd||(d===bd&&best&&df.get(k)>df.get(best))){bd=d;best=k;} });
+      if(bd>max)best=null; }
+    if(best)fixed.push(best); else if([...t].length>=4) missing++; });
+  qt=[...new Set(fixed)];
+  if(!qt.length||missing>0)return null;
+  const idf=t=>{const n=df.get(t)||0; return n?Math.log(1+(N-n+.5)/(n+.5)):0;};
+  const lead=Math.max(...qt.map(idf));
+  const k1=1.3,bb=0.7; const cand=[];
+  chunks.forEach((c,ci)=>{
+    let s=0,hit=0;
+    qt.forEach(t=>{const f=c.tf.get(t)||0; if(!f&&!c.title.has(t))return; const w=idf(t);
+      if(f){hit++; s+=w*f*(k1+1)/(f+k1*(1-bb+bb*c.len/avg));} if(c.title.has(t))s+=w*0.6;});
+    if(!hit)return;
+    s*=(0.5+0.5*hit/qt.length);
+    if(NOISE.test(c.text))s*=0.35; else if(SIDE.test(c.text))s*=0.7;
+    cand.push({ci,s,hit});
+  });
+  if(!cand.length)return null;
+  cand.sort((a,b)=>b.s-a.s);
+  let best=null;
+  cand.slice(0,400).forEach(c=>{
+    const sents=splitSent(chunks[c.ci].text); let bi=0,bs=-1;
+    sents.forEach((x,i)=>{const v=sentScore(x,qt,idf,lead); if(v>bs){bs=v;bi=i;}});
+    const titleAll=qt.every(t=>chunks[c.ci].title.has(t));
+    const total=Math.log1p(c.s)*2+bs+(titleAll?lead*1.2:0);
+    if(!best||total>best.total)best={...c,total,bi,sents};
+  });
+  if(!best||best.total<2.2||best.hit<1)return null;
+  const c=chunks[best.ci]; const sents=best.sents; const bi=best.bi;
+  let out=sents.slice(bi,bi+(deep?8:3));
+  if(deep){ let j=best.ci+1; while(out.join(" ").length<900&&j<chunks.length&&chunks[j].pi-c.pi<=1&&!NOISE.test(chunks[j].text)){ out=out.concat(splitSent(chunks[j].text)); j++; } out=out.slice(0,12); }
+  else if(out.join(" ").length>420) out=out.slice(0,2);
+  const page=b.pages[c.pi]; const ch=b.chapters.find(x=>x.u===page.u);
+  // start the answer where the definition / section actually begins
+  let f=out[0]; const di=f.search(/Definition\s*:|வரையறை\s*:/i); if(di>0)f=f.slice(di).replace(/^\S+\s*:\s*/,"");
+  else { const secs=[...f.matchAll(/\b\d+(\.\d+)+\s+/g)]; if(secs.length){const last=secs[secs.length-1]; const rest=f.slice(last.index+last[0].length); if(qt.some(t=>toks(rest).includes(t))) f=rest;} }
+  out[0]=f.replace(/^\s*\d+(\.\d+)+\s*/,"").replace(/^(\S+)\s+\1\b/i,"$1");
+  out=out.filter((x,i)=>i===0||!(/\|/.test(x)||/^(Table|Figure|Fig\.|அட்டவணை|படம்)\s*\d/i.test(x)||/\b(1[5-9]|20)\d\d\b.*\b(1[5-9]|20)\d\d\b/.test(x)));
+  return {text:out.join(" ").replace(/\s+\d{1,3}\s*$/,"").replace(/^•\s*/,"").replace(/\s+•\s*/g," "),book:b,page,ch,score:best.total};
+}
+async function textbookAnswer(q,al,deep){
+  const std=$("std").value; let list=booksFor(std,al); let fallback=false;
+  if(!list.length){ list=booksFor(std,al==="ta"?"en":"ta"); fallback=list.length>0; }
+  if(!list.length)return {none:true,noBook:true};
+  let best=null;
+  for(const meta of list){ const b=await loadBook(meta.id); const r=search(b,q,deep); if(r&&(!best||r.score>best.score))best=r; }
+  if(!best)return {none:true};
+  best.fallback=fallback; return best;
+}
+
+/* ---------- Chapters: book → chapter → page by page ---------- */
+let curBook=null, curCh=null, curIdx=0;
+function renderBooks(){
+  const std=$("chStd").value; const list=booksFor(std);
+  const chips=$("bookChips"); chips.textContent=""; $("chList").textContent="";
+  $("chEmpty").hidden=!!list.length; $("chEmpty").textContent=T[ui].noBooks;
+  if(!list.length)return;
+  let sel=store.get("book:"+std); if(!list.find(b=>b.id===sel)) sel=(list.find(b=>b.medium===ui)||list[0]).id;
+  list.forEach(b=>{const c=document.createElement("button");c.className="chip";c.type="button";c.setAttribute("aria-pressed",b.id===sel);
+    c.textContent=(b.medium==="ta"?"தமிழ் · ":"English · ")+b.label; c.onclick=()=>{store.set("book:"+std,b.id);renderBooks();}; chips.appendChild(c);});
+  const meta=list.find(b=>b.id===sel);
+  meta.chapters.forEach(ch=>{
+    const d=document.createElement("button");d.className="chap";d.type="button";
+    const n=document.createElement("span");n.className="num";n.textContent=String(ch.u).padStart(2,"0");
+    const w=document.createElement("span");w.style.minWidth="0";
+    const t=document.createElement("div");t.className="t";t.textContent=ch.title;
+    const s=document.createElement("div");s.className="s";s.textContent=`${ch.count} ${T[ui].pages}`;
+    w.append(t,s);d.append(n,w);d.onclick=()=>openChapter(meta.id,ch.u,0);$("chList").appendChild(d);
+  });
+}
+$("chStd").addEventListener("change",renderBooks);
+async function openChapter(id,u,idx,pdfPage){
+  stopReading();
+  const b=await loadBook(id); curBook=b; curCh=b.chapters.find(c=>c.u===u);
+  const pages=b.pages.filter(p=>p.u===u);
+  curIdx=pdfPage?Math.max(0,pages.findIndex(p=>p.n===pdfPage)):idx;
+  $("chHome").hidden=true; $("reader").hidden=false; show("chapters",true); showPage();
+}
+function chPages(){return curBook.pages.filter(p=>p.u===curCh.u);}
+function showPage(){
+  const ps=chPages(); curIdx=Math.max(0,Math.min(curIdx,ps.length-1)); const p=ps[curIdx];
+  $("rdTitle").textContent=`${curCh.u}. ${curCh.title}`;
+  $("rdBook").textContent=`Std ${curBook.std.replace(/[BZ]$/,"")} · ${curBook.label} · ${curBook.edition}`+(curBook.id.match(/^1[12]_/)&&!/^12_zoo_en/.test(curBook.id)?" · "+T[ui].ocr:"");
+  $("rdText").textContent=tidy(p.t); $("rdText").lang=curBook.medium;
+  $("rdPos").textContent=`${T[ui].pageOf} ${p.pg||p.n} · ${curIdx+1} ${T[ui].of} ${ps.length}`;
+  $("rdPrev").disabled=curIdx===0; $("rdNext").disabled=curIdx===ps.length-1;
+  try{store.set("pos:"+curBook.id,JSON.stringify({u:curCh.u,i:curIdx}));}catch(e){}
+  window.scrollTo(0,0);
+}
+let reading=false;
+function stopReading(){ if(reading){reading=false; reqId++; stopSpeaking(); setPhase("idle");} $("rdListen").textContent=T[ui].listen2; }
+$("rdBack").onclick=()=>{stopReading();$("reader").hidden=true;$("chHome").hidden=false;};
+$("rdPrev").onclick=()=>{stopReading();curIdx--;showPage();};
+$("rdNext").onclick=()=>{stopReading();curIdx++;showPage();};
+function readPage(){
+  const p=chPages()[curIdx]; reading=true; $("rdListen").textContent=ui==="ta"?"நிறுத்து":"Stop";
+  speak(tidy(p.t),curBook.medium,()=>{ if(!reading)return;
+    if($("rdAuto").checked&&curIdx<chPages().length-1){curIdx++;showPage();readPage();} else stopReading(); });
+}
+$("rdListen").onclick=()=>{ if(reading){stopReading();return;} readPage(); };
+
+/* ================= ANSWERING =================
+   Free by default: answers come from the textbook text (demo notes until the books are uploaded).
+   Only inside the Claude preview, a general explanation can be shown when the notes have nothing, clearly labelled. */
+const hist=[];
+const COMPLEX=/(explain|why|how does|how do|how is|how are|difference|differentiate|compare|describe|process|mechanism|steps|stages|cycle|pathway|significance|role of|structure of|life cycle|what happens|விளக்கு|ஏன்|எப்படி|வேறுபாடு|செயல்முறை|படிநிலை|நிலைகள்|சுழற்சி|அமைப்பு)/i;
+const isComplex=q=>COMPLEX.test(q)||norm(q).length>=10;
+function setTag(k){const m={book:["ok","From your textbook"],none:["no","Not found in the textbook"]}[k];$("srcTag").className="tag "+m[0];$("srcTag").textContent=m[1];}
+function stdLabel(){const v=$("std").value;const f=STDS.find(x=>x[0]===v);return f?f[1]:"Std 12";}
+function cancelWork(){ if(abortCtl){try{abortCtl.abort();}catch(e){} abortCtl=null;} }
+async function ask(q,via,conf){
+  q=(q||"").trim(); if(!q)return;
+  const my=++reqId; cancelWork(); stopSpeaking(); stopRec(); spokenText="";
+  const t0=performance.now(); const al=detectLang(q); const deep=isComplex(q);
+  const autoSpeak=$("autospeak").checked&&!!synth;
+  $("caption").textContent=q; $("anscard").hidden=false; $("srcTag").textContent="";
+  $("answer").textContent=deep?T[al].deep:T[al].think;
+  setPhase("thinking",deep?T[ui].deep:null);
+  streamDone=false; let spokenUpTo=0;
+  onQueueEmpty=()=>{ if(my===reqId){stopRec();setPhase("idle");} };
+  if(autoSpeak) startBargeIn(my);
+  const feed=(text,final)=>{ if(my!==reqId)return; $("answer").textContent=text; if(!autoSpeak)return;
+    const {done,pending}=splitSentences(text.slice(spokenUpTo));
+    const ready=final?done:done.slice(0,done.length-(pending.trim()?1:0));
+    ready.forEach(s=>sayChunk(s,al,my));
+    spokenUpTo=final?text.length:text.length-(pending.trim()?pending.length:0); };
+  const r=await textbookAnswer(q,al,deep); let text=null, src="none"; $("cite").textContent=""; $("openPage").hidden=true;
+  if(my!==reqId)return;
+  if(!r.none){
+    src="book"; text=r.text;
+    if(r.fallback) text=(al==="ta"?T.ta:T.en).notReady.replace("{m}",al==="ta"?"தமிழ்":"English").replace("{o}",al==="ta"?"English":"தமிழ்")+"\n\n"+text;
+    $("cite").textContent=`${r.book.label} · ${r.ch?r.ch.u+". "+r.ch.title:""} · ${T[ui].pageOf} ${r.page.pg||r.page.n}`;
+    $("openPage").hidden=false; $("openPage").textContent=T[ui].open;
+    $("openPage").onclick=()=>openChapter(r.book.id,r.page.u,0,r.page.n);
+  }
+  if(my!==reqId)return;
+  if(!text){ spokenUpTo=0; text=r.noBook?(al==="ta"?"இந்த வகுப்புக்கான புத்தகம் இன்னும் தயாராகவில்லை. அமைப்புகளில் வேறு வகுப்பைத் தேர்ந்தெடுக்கலாம்.":"The book for this class isn't ready yet. You can pick another class in Settings.")
+      :(al==="ta"?"உங்கள் பாடப்புத்தகத்தில் இதைக் கண்டுபிடிக்க முடியவில்லை. வேறு சொற்களில் கேட்டுப் பாருங்கள், அல்லது பாடங்கள் பகுதியில் தொடர்புடைய பாடத்தைத் திறக்கவும்.":"I couldn't find this in your textbook. Try asking with different words, or open the related chapter in Chapters."); }
+  streamDone=true; feed(text,true);
+  lastAnswer=text; lastLang=al; setTag(src);
+  hist.push({role:"user",content:q},{role:"assistant",content:text}); while(hist.length>6)hist.shift();
+  addHistory(q,text,al);
+  if(!autoSpeak||queue<=0){ stopRec(); setPhase("idle"); }
+  log(via,q,al,conf,src+(deep?" · deep":""),performance.now()-t0);
+}
+$("askform").onsubmit=e=>{e.preventDefault();const v=$("q").value;$("q").value="";ask(v,"typed");};
+function addHistory(q,a,al){
+  const e=$("convoEmpty");if(e)e.remove();
+  const d=document.createElement("div");d.className="qa";
+  const qq=document.createElement("div");qq.className="q";qq.textContent=q;
+  const aa=document.createElement("div");aa.className="a";aa.textContent=a;
+  const b=document.createElement("button");b.className="iconbtn";b.innerHTML=PLAY;b.setAttribute("aria-label","Read again");b.onclick=()=>speak(a,al);
+  const row=document.createElement("div");row.className="row between";row.append(qq,b);
+  d.append(row,aa);$("convo").prepend(d);
+}
+
+/* ---------- Oral quiz ---------- */
+function showQ(){const it=QUIZ[qi];$("qtext").textContent=`Q${qi+1}. `+it.q[ui];$("verdict").textContent="";$("qa").value="";$("qnext").disabled=true;
+  speak(it.q[ui],ui,()=>{ if(SR) listen((t,c)=>{$("qa").value=t;check(t,"voice",c);}); });}
+$("qstart").onclick=()=>{qi=0;showQ();};
+$("qnext").onclick=()=>{qi=(qi+1)%QUIZ.length;showQ();};
+function check(ans,via,conf){
+  if(qi<0){$("verdict").textContent=T[ui].start;return;}
+  const it=QUIZ[qi];const s=ans.toLowerCase().trim();const ok=it.a.some(a=>s.includes(a.toLowerCase()));
+  const L=/[஀-௿]/.test(s)?"ta":ui;
+  const head=ok?(L==="ta"?"சரி! நன்று.":"Correct! Well done."):(L==="ta"?"பரவாயில்லை, மீண்டும் முயலலாம்.":"Not quite. That's okay.");
+  const said=`${head} ${it.s[L]}`;
+  $("verdict").textContent="";
+  const tag=document.createElement("span");tag.className="tag "+(ok?"ok":"no");tag.textContent=ok?"Correct":"Try again";
+  const p=document.createElement("div");p.style.marginTop="6px";p.textContent=`"${ans}" — ${said}`;
+  $("verdict").append(tag,p); speak(said,L); $("qnext").disabled=false;
+  log(via,"Quiz Q"+(qi+1)+": "+ans,L,conf,ok?"quiz ✓":"quiz ✗",0);
+}
+$("quizform").onsubmit=e=>{e.preventDefault();check($("qa").value,"typed");};
+$("qmic").onclick=()=>listen((t,c)=>{$("qa").value=t;check(t,"voice",c);});
+
+/* ---------- Log ---------- */
+function log(via,q,l,conf,src,ms){attempt++;const tb=$("logbody");if(attempt===1)tb.textContent="";const tr=document.createElement("tr");
+  [attempt,via,q,l==="ta"?"Tamil":"English",conf==null?"—":(conf*100).toFixed(0)+"%",src,ms?(ms/1000).toFixed(1)+" s":"—"].forEach(v=>{const td=document.createElement("td");td.textContent=v;tr.appendChild(td);});tb.prepend(tr);}
+
+/* ---------- Boot ---------- */
+["spoken","rate","autospeak","bargein","patient","cues"].forEach(id=>{ const el=$(id); const v=store.get("set:"+id);
+  if(v!==null){ if(el.type==="checkbox") el.checked=v==="1"; else el.value=v; }
+  el.addEventListener("change",()=>store.set("set:"+id, el.type==="checkbox"?(el.checked?"1":"0"):el.value)); });
+$("rateval").textContent=$("rate").value+"×";
+function warmBooks(){ const std=$("std").value; booksFor(std).forEach(m=>loadBook(m.id).then(b=>{ if(!b.idx){ const go=()=>{ if(!b.idx)b.idx=buildIndex(b); }; (window.requestIdleCallback||setTimeout)(go,300); } }).catch(()=>{})); }
+$("std").addEventListener("change",warmBooks);
+setUI(store.get("ui")==="ta"?"ta":"en");
+micStatus();
+loadCatalog().then(warmBooks);
+window.UyirTest={speakable,search,loadBook,toks,stem,sentScore,splitSent};   // used by automated tests
+if("serviceWorker" in navigator && location.protocol==="https:" && !/claude\.ai|claudeusercontent/.test(location.hostname)){ try{navigator.serviceWorker.register("sw.js").catch(()=>{});}catch(e){} }
+})();
+</script>
+
+</body>
+</html>

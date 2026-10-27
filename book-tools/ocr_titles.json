@@ -1,0 +1,671 @@
+{
+ "11_biobot_en": {
+  "ch": [
+   [
+    "Living World",
+    1
+   ],
+   [
+    "Plant Kingdom",
+    31
+   ],
+   [
+    "Vegetative Morphology",
+    47
+   ],
+   [
+    "Reproductive Morphology",
+    65
+   ],
+   [
+    "Taxonomy and Systematic Botany",
+    86
+   ],
+   [
+    "Cell: The Unit of Life",
+    118
+   ],
+   [
+    "Cell Cycle",
+    140
+   ],
+   [
+    "Biomolecules",
+    150
+   ],
+   [
+    "Tissue and Tissue System",
+    168
+   ],
+   [
+    "Secondary Growth",
+    192
+   ],
+   [
+    "Transport in Plants",
+    203
+   ],
+   [
+    "Mineral Nutrition",
+    229
+   ],
+   [
+    "Photosynthesis",
+    241
+   ],
+   [
+    "Respiration",
+    261
+   ],
+   [
+    "Plant Growth and Development",
+    276
+   ]
+  ],
+  "end": 292
+ },
+ "11_biozoo_en": {
+  "ch": [
+   [
+    "The Living World",
+    1
+   ],
+   [
+    "Kingdom Animalia",
+    14
+   ],
+   [
+    "Tissue Level of Organisation",
+    37
+   ],
+   [
+    "Organ and Organ Systems in Animals",
+    47
+   ],
+   [
+    "Digestion and Absorption",
+    73
+   ],
+   [
+    "Respiration",
+    92
+   ],
+   [
+    "Body Fluids and Circulation",
+    109
+   ],
+   [
+    "Excretion",
+    132
+   ],
+   [
+    "Locomotion and Movement",
+    151
+   ],
+   [
+    "Neural Control and Coordination",
+    169
+   ],
+   [
+    "Chemical Coordination and Integration",
+    196
+   ],
+   [
+    "Trends in Economic Zoology",
+    215
+   ]
+  ],
+  "end_pdf": 249
+ },
+ "12_biobot_en": {
+  "ch": [
+   [
+    "Asexual and Sexual Reproduction in Plants",
+    1
+   ],
+   [
+    "Classical Genetics",
+    31
+   ],
+   [
+    "Chromosomal Basis of Inheritance",
+    50
+   ],
+   [
+    "Principles and Processes of Biotechnology",
+    68
+   ],
+   [
+    "Plant Tissue Culture",
+    96
+   ],
+   [
+    "Principles of Ecology",
+    109
+   ],
+   [
+    "Ecosystem",
+    134
+   ],
+   [
+    "Environmental Issues",
+    155
+   ],
+   [
+    "Plant Breeding",
+    171
+   ],
+   [
+    "Economically Useful Plants and Entrepreneurial Botany",
+    185
+   ]
+  ],
+  "end": 203
+ },
+ "11_biobot_ta": {
+  "offset": 4,
+  "end": 311,
+  "ch": [
+   [
+    "உயிரி உலகம்",
+    1
+   ],
+   [
+    "தாவர உலகம்",
+    34
+   ],
+   [
+    "உடலப் புற அமைப்பியல்",
+    51
+   ],
+   [
+    "இனப்பெருக்கப் புற அமைப்பியல்",
+    69
+   ],
+   [
+    "வகைப்பாட்டியல் மற்றும் குழுமப் பரிணாம வகைப்பாட்டியல்",
+    90
+   ],
+   [
+    "செல்: ஒரு வாழ்வியல் அலகு",
+    124
+   ],
+   [
+    "செல் சுழற்சி",
+    148
+   ],
+   [
+    "உயிரி மூலக்கூறுகள்",
+    159
+   ],
+   [
+    "திசு மற்றும் திசுத்தொகுப்பு",
+    177
+   ],
+   [
+    "இரண்டாம் நிலை வளர்ச்சி",
+    204
+   ],
+   [
+    "தாவரங்களில் கடத்து முறைகள்",
+    216
+   ],
+   [
+    "கனிம ஊட்டம்",
+    244
+   ],
+   [
+    "ஒளிச்சேர்க்கை",
+    257
+   ],
+   [
+    "சுவாசித்தல்",
+    281
+   ],
+   [
+    "தாவர வளர்ச்சியும் படிம வளர்ச்சியும்",
+    298
+   ]
+  ]
+ },
+ "11_biozoo_ta": {
+  "offset": 8,
+  "end_pdf": 283,
+  "ch": [
+   [
+    "உயிருலகம்",
+    1
+   ],
+   [
+    "விலங்குலகம்",
+    16
+   ],
+   [
+    "திசு அளவிலான கட்டமைப்பு",
+    44
+   ],
+   [
+    "விலங்குகளின் உறுப்பு மற்றும் உறுப்பு மண்டலங்கள்",
+    56
+   ],
+   [
+    "செரித்தல் மற்றும் உட்கிரகித்தல்",
+    86
+   ],
+   [
+    "சுவாசம்",
+    106
+   ],
+   [
+    "உடல் திரவங்கள் மற்றும் சுற்றோட்டம்",
+    125
+   ],
+   [
+    "கழிவு நீக்கம்",
+    151
+   ],
+   [
+    "இடப்பெயர்ச்சி மற்றும் இயக்கம்",
+    173
+   ],
+   [
+    "நரம்பு கட்டுப்பாடு மற்றும் ஒருங்கிணைப்பு",
+    194
+   ],
+   [
+    "வேதிய ஒருங்கிணைப்பு",
+    224
+   ],
+   [
+    "வணிக விலங்கியலின் போக்குகள்",
+    246
+   ]
+  ]
+ },
+ "12_biobot_ta": {
+  "offset": 8,
+  "end_pdf": 228,
+  "ch": [
+   [
+    "தாவரங்களில் பாலிலா இனப்பெருக்கம் மற்றும் பாலினப்பெருக்கம்",
+    1
+   ],
+   [
+    "பாரம்பரிய மரபியல்",
+    33
+   ],
+   [
+    "குரோமோசோம் அடிப்படையிலான பாரம்பரியம்",
+    53
+   ],
+   [
+    "உயிரிதொழில்நுட்பவியல் நெறிமுறைகளும் செயல்முறைகளும்",
+    73
+   ],
+   [
+    "தாவரத் திசு வளர்ப்பு",
+    104
+   ],
+   [
+    "சூழ்நிலையியல் கோட்பாடுகள்",
+    118
+   ],
+   [
+    "சூழல்மண்டலம்",
+    146
+   ],
+   [
+    "சுற்றுச்சூழல் பிரச்சினைகள்",
+    168
+   ],
+   [
+    "பயிர் பெருக்கம்",
+    185
+   ],
+   [
+    "பொருளாதாரப் பயனுள்ள தாவரங்களும் தொழில்முனைவுத் தாவரவியலும்",
+    201
+   ]
+  ]
+ },
+ "11_bot_en": {
+  "offset": 4,
+  "end": 329,
+  "ch": [
+   [
+    "Living World",
+    1
+   ],
+   [
+    "Plant Kingdom",
+    33
+   ],
+   [
+    "Vegetative Morphology",
+    61
+   ],
+   [
+    "Reproductive Morphology",
+    79
+   ],
+   [
+    "Taxonomy and Systematic Botany",
+    100
+   ],
+   [
+    "Cell: The Unit of Life",
+    144
+   ],
+   [
+    "Cell Cycle",
+    166
+   ],
+   [
+    "Biomolecules",
+    176
+   ],
+   [
+    "Tissue and Tissue System",
+    194
+   ],
+   [
+    "Secondary Growth",
+    218
+   ],
+   [
+    "Transport in Plants",
+    233
+   ],
+   [
+    "Mineral Nutrition",
+    259
+   ],
+   [
+    "Photosynthesis",
+    271
+   ],
+   [
+    "Respiration",
+    291
+   ],
+   [
+    "Plant Growth and Development",
+    306
+   ]
+  ]
+ },
+ "11_zoo_en": {
+  "offset": 8,
+  "end_pdf": 271,
+  "ch": [
+   [
+    "The Living World",
+    1
+   ],
+   [
+    "Kingdom Animalia",
+    14
+   ],
+   [
+    "Tissue Level of Organisation",
+    37
+   ],
+   [
+    "Organ and Organ Systems in Animals",
+    47
+   ],
+   [
+    "Digestion and Absorption",
+    73
+   ],
+   [
+    "Respiration",
+    94
+   ],
+   [
+    "Body Fluids and Circulation",
+    112
+   ],
+   [
+    "Excretion",
+    136
+   ],
+   [
+    "Locomotion and Movement",
+    155
+   ],
+   [
+    "Neural Control and Coordination",
+    176
+   ],
+   [
+    "Chemical Coordination and Integration",
+    203
+   ],
+   [
+    "Basic Medical Instruments and Techniques",
+    222
+   ],
+   [
+    "Trends in Economic Zoology",
+    237
+   ]
+  ]
+ },
+ "12_bot_en": {
+  "offset": 10,
+  "end": 248,
+  "ch": [
+   [
+    "Asexual and Sexual Reproduction in Plants",
+    1
+   ],
+   [
+    "Classical Genetics",
+    33
+   ],
+   [
+    "Chromosomal Basis of Inheritance",
+    52
+   ],
+   [
+    "Principles and Processes of Biotechnology",
+    82
+   ],
+   [
+    "Plant Tissue Culture",
+    110
+   ],
+   [
+    "Principles of Ecology",
+    123
+   ],
+   [
+    "Ecosystem",
+    149
+   ],
+   [
+    "Environmental Issues",
+    178
+   ],
+   [
+    "Plant Breeding",
+    199
+   ],
+   [
+    "Economically Useful Plants and Entrepreneurial Botany",
+    216
+   ]
+  ]
+ },
+ "11_bot_ta": {
+  "offset": 4,
+  "end": 351,
+  "ch": [
+   [
+    "உயிரி உலகம்",
+    1
+   ],
+   [
+    "தாவர உலகம்",
+    36
+   ],
+   [
+    "உடலப் புற அமைப்பியல்",
+    66
+   ],
+   [
+    "இனப்பெருக்கப் புற அமைப்பியல்",
+    84
+   ],
+   [
+    "வகைப்பாட்டியல் மற்றும் குழுமப் பரிணாம வகைப்பாட்டியல்",
+    105
+   ],
+   [
+    "செல்: ஒரு வாழ்வியல் அலகு",
+    151
+   ],
+   [
+    "செல் சுழற்சி",
+    174
+   ],
+   [
+    "உயிரி மூலக்கூறுகள்",
+    185
+   ],
+   [
+    "திசு மற்றும் திசுத்தொகுப்பு",
+    202
+   ],
+   [
+    "இரண்டாம் நிலை வளர்ச்சி",
+    229
+   ],
+   [
+    "தாவரங்களில் கடத்து முறைகள்",
+    244
+   ],
+   [
+    "கனிம ஊட்டம்",
+    272
+   ],
+   [
+    "ஒளிச்சேர்க்கை",
+    285
+   ],
+   [
+    "சுவாசித்தல்",
+    308
+   ],
+   [
+    "தாவர வளர்ச்சியும் படிம வளர்ச்சியும்",
+    324
+   ]
+  ]
+ },
+ "11_zoo_ta": {
+  "offset": 8,
+  "end_pdf": 307,
+  "ch": [
+   [
+    "உயிருலகம்",
+    1
+   ],
+   [
+    "விலங்குலகம்",
+    16
+   ],
+   [
+    "திசு அளவிலான கட்டமைப்பு",
+    44
+   ],
+   [
+    "விலங்குகளின் உறுப்பு மற்றும் உறுப்பு மண்டலங்கள்",
+    56
+   ],
+   [
+    "செரித்தல் மற்றும் உட்கிரகித்தல்",
+    86
+   ],
+   [
+    "சுவாசம்",
+    109
+   ],
+   [
+    "உடல் திரவங்கள் மற்றும் சுற்றோட்டம்",
+    129
+   ],
+   [
+    "கழிவு நீக்கம்",
+    156
+   ],
+   [
+    "இடப்பெயர்ச்சி மற்றும் இயக்கம்",
+    178
+   ],
+   [
+    "நரம்பு கட்டுப்பாடு மற்றும் ஒருங்கிணைப்பு",
+    202
+   ],
+   [
+    "வேதிய ஒருங்கிணைப்பு",
+    232
+   ],
+   [
+    "அடிப்படை மருத்துவக் கருவிகள் மற்றும் தொழில்நுட்பங்கள்",
+    254
+   ],
+   [
+    "வணிக விலங்கியலின் போக்குகள்",
+    270
+   ]
+  ]
+ },
+ "12_bot_ta": {
+  "offset": 10,
+  "end": 264,
+  "ch": [
+   [
+    "தாவரங்களில் பாலிலா இனப்பெருக்கம் மற்றும் பாலினப்பெருக்கம்",
+    1
+   ],
+   [
+    "பாரம்பரிய மரபியல்",
+    35
+   ],
+   [
+    "குரோமோசோம் அடிப்படையிலான பாரம்பரியம்",
+    55
+   ],
+   [
+    "உயிரிதொழில்நுட்பவியல் நெறிமுறைகளும் செயல்முறைகளும்",
+    88
+   ],
+   [
+    "தாவரத் திசு வளர்ப்பு",
+    119
+   ],
+   [
+    "சூழ்நிலையியல் கோட்பாடுகள்",
+    133
+   ],
+   [
+    "சூழல்மண்டலம்",
+    161
+   ],
+   [
+    "சுற்றுச்சூழல் பிரச்சினைகள்",
+    191
+   ],
+   [
+    "பயிர் பெருக்கம்",
+    213
+   ],
+   [
+    "பொருளாதாரப் பயனுள்ள தாவரங்களும் தொழில்முனைவுத் தாவரவியலும்",
+    231
+   ]
+  ]
+ }
+}

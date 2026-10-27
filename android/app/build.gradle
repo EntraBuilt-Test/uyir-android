@@ -1,0 +1,51 @@
+plugins {
+    id 'com.android.application'
+}
+
+// The website the app opens. Set in gradle.properties or with -PtwaHost=your-site.vercel.app
+def twaHost = (project.findProperty('twaHost') ?: 'uyir.vercel.app').toString().replaceAll('^https?://', '').replaceAll('/+$', '')
+def ks = System.getenv('KEYSTORE_FILE')
+
+android {
+    namespace 'com.entraiot.uyir'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.entraiot.uyir'
+        minSdk 21
+        targetSdk 34
+        versionCode((project.findProperty('versionCode') ?: '1').toString().toInteger())
+        versionName((project.findProperty('versionName') ?: '1.0.0').toString())
+        manifestPlaceholders = [hostName: twaHost]
+        resValue 'string', 'asset_statements',
+            "[{ \\\"relation\\\": [\\\"delegate_permission/common.handle_all_urls\\\"], \\\"target\\\": { \\\"namespace\\\": \\\"web\\\", \\\"site\\\": \\\"https://${twaHost}\\\" } }]"
+    }
+
+    signingConfigs {
+        release {
+            if (ks) {
+                storeFile file(ks)
+                storePassword System.getenv('KEYSTORE_PASSWORD')
+                keyAlias System.getenv('KEY_ALIAS')
+                keyPassword System.getenv('KEY_PASSWORD')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            if (ks) signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    // Trusted Web Activity: opens the website full-screen inside Chrome, so voice input and speech work exactly as on the web.
+    implementation 'com.google.androidbrowserhelper:androidbrowserhelper:2.5.0'
+}
