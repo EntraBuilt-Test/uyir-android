@@ -895,7 +895,7 @@ async function talkStart(){   // true = the voice teacher call started; false = 
     rClient.on("error",()=>talkEnd(ui==="ta"?"அழைப்பு தடைபட்டது. மீண்டும் தட்டுங்கள்.":"The call stopped. Tap the speaker to try again."));
     rClient.on("agent_start_talking",()=>{ if(rOn)setPhase("speaking",ui==="ta"?"ஆசிரியர் பேசுகிறார்…":"Teacher is speaking…"); });
     rClient.on("agent_stop_talking",()=>{ if(rOn)setPhase("listening",ui==="ta"?"உங்கள் முறை, பேசுங்கள்.":"Your turn, speak."); });
-    await rClient.startCall({accessToken:j.access_token});
+    await rClient.startCall({accessToken:j.access_token,callId:j.call_id,transport:j.transport,iceServers:j.ice_servers});
     return true;
   }catch(e){ try{rClient&&rClient.stopCall();}catch(_){} rClient=null; rBusy=false; rOn=false; setPhase("idle"); return false; }
 }
