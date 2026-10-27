@@ -150,7 +150,6 @@ nav.bottom button[aria-current="page"]{color:var(--leaf);font-weight:600}
       <div class="row between"><span class="cite" id="cite"></span><button class="linkbtn" id="openPage" hidden>Open this page</button></div>
     </div>
     <button class="linkbtn" id="typeToggle">Type instead</button>
-    <button class="linkbtn" id="talkTeacher" type="button" style="margin-top:6px">Talk to teacher · ஆசிரியருடன் பேசு</button>
     <form class="row" id="askform" hidden style="width:100%">
       <input type="text" id="q" placeholder="Type your question" autocomplete="off">
       <button class="btn primary" type="submit" id="askbtn">Ask</button>
@@ -572,6 +571,8 @@ function deliver(text,conf){
   else ask(text,"voice",conf);
 }
 $("speaker").onclick=()=>{
+  if(rOn){ talkEnd(); return; } if(rBusy)return;
+  if(phase==="idle"&&retellReady!==false){ talkStart().then(ok=>{ if(!ok)listen("main"); }); return; }
   if(phase==="listening"){ if(rec&&recMode==="capture"){try{rec.stop();}catch(e){}} return; }
   listen("main");
 };
@@ -877,27 +878,27 @@ $("std").addEventListener("change",warmBooks);
 setUI(store.get("ui")==="ta"?"ta":"en");
 micStatus();
 
-/* ---------- Talk to teacher: live voice call with the Retell agent, inside the app ---------- */
-let rClient=null, rBusy=false, rOn=false;
-const TALK_LABEL="Talk to teacher · ஆசிரியருடன் பேசு", END_LABEL="End call · அழைப்பை முடி";
+/* ---------- Voice teacher (Retell): tapping the speaker starts a live voice call, on this same page ----------
+   If the voice teacher is not set up, or it cannot connect, the speaker works as before (the app's own listening). */
+let rClient=null, rBusy=false, rOn=false, retellReady=null;
 function loadRetell(){ return new Promise((ok,no)=>{ if(window.RetellWebClient)return ok(); const s=document.createElement("script"); s.src="retell-web.js"; s.onload=ok; s.onerror=()=>no(new Error("load")); document.head.appendChild(s); }); }
-function talkEnd(msg){ rOn=false; rBusy=false; $("talkTeacher").textContent=TALK_LABEL; keepAwake(false); try{rClient&&rClient.stopCall();}catch(e){} rClient=null; if(msg)state(msg); else state(ui==="ta"?"தொடங்க தட்டவும்":"Tap to ask"); }
-async function talkStart(){
-  if(rBusy)return; if(rOn){ talkEnd(); return; }
-  rBusy=true; stopSpeaking(); stopRec(); cancelWork(); state(ui==="ta"?"ஆசிரியரை அழைக்கிறேன்…":"Calling the teacher…");
+function talkEnd(msg){ const was=rOn||rBusy; rOn=false; rBusy=false; try{rClient&&rClient.stopCall();}catch(e){} rClient=null; if(was){ setPhase("idle"); if(msg)state(msg); } }
+async function talkStart(){   // true = the voice teacher call started; false = use the app's own listening
+  if(rBusy||rOn||retellReady===false)return false;
+  rBusy=true; stopSpeaking(); stopRec(); cancelWork(); setPhase("thinking",ui==="ta"?"ஆசிரியரை அழைக்கிறேன்…":"Calling the teacher…");
   try{
     const r=await fetch("/api/call",{method:"POST"}); const j=await r.json().catch(()=>({}));
-    if(!r.ok||!j.access_token){ if(r.status===500){ window.open("/api/talk","_blank","noopener"); talkEnd(); return; } throw new Error("call"); }
+    if(!r.ok||!j.access_token){ if(r.status===500)retellReady=false; throw new Error("call"); }
     await loadRetell(); rClient=new window.RetellWebClient();
-    rClient.on("call_started",()=>{ rOn=true; rBusy=false; $("talkTeacher").textContent=END_LABEL; keepAwake(true); state(ui==="ta"?"ஆசிரியருடன் பேசுகிறீர்கள். பேசுங்கள்.":"Connected. Go ahead and speak."); });
+    rClient.on("call_started",()=>{ rOn=true; rBusy=false; setPhase("listening",ui==="ta"?"ஆசிரியருடன் பேசுகிறீர்கள். பேசுங்கள்.":"Connected. Go ahead and speak."); });
     rClient.on("call_ended",()=>talkEnd());
-    rClient.on("error",()=>talkEnd(ui==="ta"?"அழைப்பு தடைபட்டது. மீண்டும் முயலுங்கள்.":"The call stopped. Please try again.",true));
-    rClient.on("agent_start_talking",()=>state(ui==="ta"?"ஆசிரியர் பேசுகிறார்…":"Teacher is speaking…"));
-    rClient.on("agent_stop_talking",()=>state(ui==="ta"?"உங்கள் முறை, பேசுங்கள்.":"Your turn, speak."));
+    rClient.on("error",()=>talkEnd(ui==="ta"?"அழைப்பு தடைபட்டது. மீண்டும் தட்டுங்கள்.":"The call stopped. Tap the speaker to try again."));
+    rClient.on("agent_start_talking",()=>{ if(rOn)setPhase("speaking",ui==="ta"?"ஆசிரியர் பேசுகிறார்…":"Teacher is speaking…"); });
+    rClient.on("agent_stop_talking",()=>{ if(rOn)setPhase("listening",ui==="ta"?"உங்கள் முறை, பேசுங்கள்.":"Your turn, speak."); });
     await rClient.startCall({accessToken:j.access_token});
-  }catch(e){ talkEnd(ui==="ta"?"ஆசிரியரை இணைக்க முடியவில்லை. அனுமதியையும் இணையத்தையும் சரிபாருங்கள்.":"Could not connect. Check the microphone permission and internet."); }
+    return true;
+  }catch(e){ try{rClient&&rClient.stopCall();}catch(_){} rClient=null; rBusy=false; rOn=false; setPhase("idle"); return false; }
 }
-$("talkTeacher").onclick=talkStart;
 loadCatalog().then(warmBooks);
 window.UyirTest={speakable,search,loadBook,toks,stem,sentScore,splitSent};   // used by automated tests
 if("serviceWorker" in navigator && location.protocol==="https:" && !/claude\.ai|claudeusercontent/.test(location.hostname)){ try{navigator.serviceWorker.register("sw.js").catch(()=>{});}catch(e){} }
