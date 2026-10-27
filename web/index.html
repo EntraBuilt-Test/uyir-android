@@ -150,6 +150,7 @@ nav.bottom button[aria-current="page"]{color:var(--leaf);font-weight:600}
       <div class="row between"><span class="cite" id="cite"></span><button class="linkbtn" id="openPage" hidden>Open this page</button></div>
     </div>
     <button class="linkbtn" id="typeToggle">Type instead</button>
+    <button class="linkbtn" id="talkTeacher" type="button" style="margin-top:6px">Talk to teacher · ஆசிரியருடன் பேசு</button>
     <form class="row" id="askform" hidden style="width:100%">
       <input type="text" id="q" placeholder="Type your question" autocomplete="off">
       <button class="btn primary" type="submit" id="askbtn">Ask</button>
@@ -580,8 +581,8 @@ $("speaker").onclick=()=>{
    Answers are found by searching the pages of the student's class, in the language they spoke. Free and offline. */
 let CATALOG=[]; const BOOKS={};
 const SEG=(typeof Intl!=="undefined"&&Intl.Segmenter)?new Intl.Segmenter("ta",{granularity:"grapheme"}):null;
-const STOP_EN=new Set("what is are the a an of in on to and or for with by from how why does do did explain describe define definition meaning mean tell me about give short note write which who whom whose when where was were be been being this that these those it its as at into than then there their they them can could would should will shall may might difference differences between briefly detail details some any your you i we our please brief".split(" "));
-const STOP_TA=new Set(["என்றால்","என்ன","என்பது","என்பவை","யாவை","யாது","எது","எவை","ஏன்","எப்படி","எவ்வாறு","விளக்கு","விளக்குக","விளக்கவும்","விளக்கம்","பற்றி","கூறு","கூறுக","கூறவும்","சொல்","சொல்லு","சொல்லுங்கள்","என்று","மற்றும்","ஒரு","இது","அது","இந்த","அந்த","வேறுபாடு","வேறுபாடுகள்","வேறுபடுத்துக","என்னென்ன","எத்தனை","யார்","எங்கு","எப்போது","தருக","எழுதுக","எழுது","குறிப்பு","வரைக","என","எனப்படும்","ஆகும்","உள்ளன","உள்ளது"]);
+const STOP_EN=new Set("what is are the a an of in on to and or for with by from how why does do did explain describe define definition meaning mean tell me about give short note write which who whom whose when where was were be been being this that these those it its as at into than then there their they them can could would should will shall may might difference differences between briefly detail details some any your you i we our please brief kindly sir madam mam teacher today doubt doubts quickly properly nicely clearly easily hello hi okay thanks thank sorry again student students exam".split(" "));
+const STOP_TA=new Set(["என்றால்","என்ன","என்பது","என்பவை","யாவை","யாது","எது","எவை","ஏன்","எப்படி","எவ்வாறு","விளக்கு","விளக்குக","விளக்கவும்","விளக்கம்","பற்றி","கூறு","கூறுக","கூறவும்","சொல்","சொல்லு","சொல்லுங்கள்","என்று","மற்றும்","ஒரு","இது","அது","இந்த","அந்த","வேறுபாடு","வேறுபாடுகள்","வேறுபடுத்துக","என்னென்ன","எத்தனை","யார்","எங்கு","எப்போது","தருக","எழுதுக","எழுது","குறிப்பு","வரைக","என","எனப்படும்","ஆகும்","உள்ளன","உள்ளது","ஐயா","அம்மா","சார்","மேடம்","தயவுசெய்து","இன்று","வணக்கம்","நன்றி"]);
 function graphemes(w){return SEG?[...SEG.segment(w)].map(x=>x.segment):[...w];}
 function stem(w){
   if(/[\u0B80-\u0BFF]/.test(w)){ if(STOP_TA.has(w))return null; const g=graphemes(w); if(g.length<2)return null;
@@ -875,6 +876,28 @@ function warmBooks(){ const std=$("std").value; booksFor(std).forEach(m=>loadBoo
 $("std").addEventListener("change",warmBooks);
 setUI(store.get("ui")==="ta"?"ta":"en");
 micStatus();
+
+/* ---------- Talk to teacher: live voice call with the Retell agent, inside the app ---------- */
+let rClient=null, rBusy=false, rOn=false;
+const TALK_LABEL="Talk to teacher · ஆசிரியருடன் பேசு", END_LABEL="End call · அழைப்பை முடி";
+function loadRetell(){ return new Promise((ok,no)=>{ if(window.RetellWebClient)return ok(); const s=document.createElement("script"); s.src="retell-web.js"; s.onload=ok; s.onerror=()=>no(new Error("load")); document.head.appendChild(s); }); }
+function talkEnd(msg){ rOn=false; rBusy=false; $("talkTeacher").textContent=TALK_LABEL; keepAwake(false); try{rClient&&rClient.stopCall();}catch(e){} rClient=null; if(msg)state(msg); else state(ui==="ta"?"தொடங்க தட்டவும்":"Tap to ask"); }
+async function talkStart(){
+  if(rBusy)return; if(rOn){ talkEnd(); return; }
+  rBusy=true; stopSpeaking(); stopRec(); cancelWork(); state(ui==="ta"?"ஆசிரியரை அழைக்கிறேன்…":"Calling the teacher…");
+  try{
+    const r=await fetch("/api/call",{method:"POST"}); const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.access_token){ if(r.status===500){ window.open("/api/talk","_blank","noopener"); talkEnd(); return; } throw new Error("call"); }
+    await loadRetell(); rClient=new window.RetellWebClient();
+    rClient.on("call_started",()=>{ rOn=true; rBusy=false; $("talkTeacher").textContent=END_LABEL; keepAwake(true); state(ui==="ta"?"ஆசிரியருடன் பேசுகிறீர்கள். பேசுங்கள்.":"Connected. Go ahead and speak."); });
+    rClient.on("call_ended",()=>talkEnd());
+    rClient.on("error",()=>talkEnd(ui==="ta"?"அழைப்பு தடைபட்டது. மீண்டும் முயலுங்கள்.":"The call stopped. Please try again.",true));
+    rClient.on("agent_start_talking",()=>state(ui==="ta"?"ஆசிரியர் பேசுகிறார்…":"Teacher is speaking…"));
+    rClient.on("agent_stop_talking",()=>state(ui==="ta"?"உங்கள் முறை, பேசுங்கள்.":"Your turn, speak."));
+    await rClient.startCall({accessToken:j.access_token});
+  }catch(e){ talkEnd(ui==="ta"?"ஆசிரியரை இணைக்க முடியவில்லை. அனுமதியையும் இணையத்தையும் சரிபாருங்கள்.":"Could not connect. Check the microphone permission and internet."); }
+}
+$("talkTeacher").onclick=talkStart;
 loadCatalog().then(warmBooks);
 window.UyirTest={speakable,search,loadBook,toks,stem,sentScore,splitSent};   // used by automated tests
 if("serviceWorker" in navigator && location.protocol==="https:" && !/claude\.ai|claudeusercontent/.test(location.hostname)){ try{navigator.serviceWorker.register("sw.js").catch(()=>{});}catch(e){} }
