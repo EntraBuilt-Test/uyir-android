@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
       body: JSON.stringify({ agent_id: agent })
     });
     const j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.access_token) return res.status(502).json({ error: "Could not start the call.", status: r.status });
+    if (!r.ok || !j.access_token) return res.status(502).json({ error: "Could not start the call.", status: r.status, detail: String(j.message || j.error_message || j.error || "").slice(0, 200) });
     return res.status(200).json({ access_token: j.access_token });
   } catch (e) {
     return res.status(502).json({ error: "Could not reach the voice service." });
